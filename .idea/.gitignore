@@ -1,0 +1,55 @@
+# ------------------------
+# IntelliJ IDEA / JetBrains
+# ------------------------
+.idea/
+*.iml
+shelf/
+workspace.xml
+
+# ------------------------
+# Eclipse
+# ------------------------
+.classpath
+.project
+.settings/
+
+# ------------------------
+# Build directories
+# ------------------------
+/target/
+/build/
+/out/
+
+# ------------------------
+# Logs
+# ------------------------
+*.log
+
+# ------------------------
+# OS generated files
+# ------------------------
+.DS_Store
+Thumbs.db
+
+# ------------------------
+# Temporary files
+# ------------------------
+*.tmp
+*.swp
+*.swo
+*.bak
+
+# ------------------------
+# Maven / Gradle
+# ------------------------
+.mvn/wrapper/maven-wrapper.jar
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+
+# ------------------------
+# Spring Boot specific
+# ------------------------
+/uploads/          # if you store uploaded files locally
+/application-*.yml
+/application-*.properties
