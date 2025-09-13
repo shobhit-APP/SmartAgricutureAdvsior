@@ -30,46 +30,46 @@ public class CropPriceController {
     @Autowired
     private HttpServletRequest request;
 
-        private final CropPriceFacade cropPriceFacade;
+    private final CropPriceFacade cropPriceFacade;
 
-        public CropPriceController(CropPriceFacade cropPriceFacade) {
-            this.cropPriceFacade = cropPriceFacade;
+    public CropPriceController(CropPriceFacade cropPriceFacade) {
+        this.cropPriceFacade = cropPriceFacade;
+    }
+
+    @GetMapping("/csrf_token")
+    public CsrfToken getCsrfToken(HttpServletRequest request) {
+        return (CsrfToken) request.getAttribute("_csrf");
+    }
+
+
+    @GetMapping("/dashboard")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> getAllMarketDetails(@AuthenticationPrincipal UserPrinciple userPrinciples,
+                                                 @RequestParam(required = false) String state) {
+        if (userPrinciples == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Unauthorized"));
         }
 
-        @GetMapping("/csrf_token")
-        public CsrfToken getCsrfToken(HttpServletRequest request) {
-            return (CsrfToken) request.getAttribute("_csrf");
+        return cropPriceFacade.getDashboard(userPrinciples, state);
+    }
+
+    @GetMapping("/predict")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> pricePredictionModel(@RequestParam(value = "lat", required = false) Double latitude,
+                                                  @RequestParam(value = "lon", required = false) Double longitude) {
+        return cropPriceFacade.getPredictionPage(latitude, longitude);
+    }
+
+    @PostMapping("/predict")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<?> predict(@AuthenticationPrincipal UserPrinciple userPrinciples,
+                                     @Valid @RequestBody Crop crop) {
+        if (userPrinciples == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Unauthorized"));
         }
-
-
-        @GetMapping("/dashboard")
-        @PreAuthorize("isAuthenticated()")
-        public ResponseEntity<?> getAllMarketDetails(@AuthenticationPrincipal UserPrinciple userPrinciples,
-                                                     @RequestParam(required = false) String state) {
-            if (userPrinciples == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("error", "Unauthorized"));
-            }
-
-            return cropPriceFacade.getDashboard(userPrinciples, state);
-        }
-
-        @GetMapping("/predict")
-        @PreAuthorize("isAuthenticated()")
-        public ResponseEntity<?> pricePredictionModel(@RequestParam(value = "lat", required = false) Double latitude,
-                                                      @RequestParam(value = "lon", required = false) Double longitude) {
-            return cropPriceFacade.getPredictionPage(latitude, longitude);
-        }
-
-        @PostMapping("/predict")
-        @PreAuthorize("isAuthenticated()")
-        public ResponseEntity<?> predict(@AuthenticationPrincipal UserPrinciple userPrinciples,
-                                         @Valid @RequestBody Crop crop) {
-            if (userPrinciples == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("error", "Unauthorized"));
-            }
-            return cropPriceFacade.predictCrop(userPrinciples, crop);
-        }
+        return cropPriceFacade.predictCrop(userPrinciples, crop);
+    }
 
 }
