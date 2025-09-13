@@ -20,6 +20,11 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Random;
 
+/**
+ * Service implementation for handling OTP (One-Time Password) generation, verification, and sending.
+ * Implements the {@link OtpService} interface to provide OTP-related functionality for login, registration,
+ * and password reset purposes.
+ */
 @Slf4j
 @Service
 public class OtpServiceImpl implements OtpService {
@@ -35,10 +40,26 @@ public class OtpServiceImpl implements OtpService {
     private String fromPhone;
 
     private final OtpRepository otpRepository;
+
+    /**
+     * Constructs an {@code OtpServiceImpl} with the specified OTP repository.
+     *
+     * @param otpRepository The {@link OtpRepository} used for storing and retrieving OTP data.
+     */
     public OtpServiceImpl(OtpRepository otpRepository) {
         this.otpRepository = otpRepository;
     }
 
+    /**
+     * Generates and stores a 6-digit OTP for the given identifier and purpose.
+     * Validates the identifier based on the OTP purpose (phone number for LOGIN, email for REGISTRATION or FORGOT_PASSWORD).
+     * Stores the OTP with a 5-minute expiry in the repository.
+     *
+     * @param identifier The identifier (phone number or email) associated with the OTP.
+     * @param purpose    The purpose of the OTP (e.g., LOGIN, REGISTRATION, FORGOT_PASSWORD).
+     * @return The generated 6-digit OTP as a string.
+     * @throws AnyException If the identifier is invalid or an error occurs during OTP generation/storage.
+     */
     @Override
     @Transactional
     public String generateAndStoreOtp(String identifier, OtpPurpose purpose) {
@@ -71,6 +92,15 @@ public class OtpServiceImpl implements OtpService {
         }
     }
 
+    /**
+     * Verifies the provided OTP for the given identifier and purpose.
+     * Checks if the OTP exists, is not expired, and matches the entered OTP.
+     *
+     * @param identifier  The identifier (phone number or email) associated with the OTP.
+     * @param otpEntered  The OTP entered by the user.
+     * @param purpose     The purpose of the OTP (e.g., LOGIN, REGISTRATION, FORGOT_PASSWORD).
+     * @return {@code true} if the OTP is valid and not expired, {@code false} otherwise.
+     */
     @Override
     @Transactional
     public boolean verifyOtp(String identifier, String otpEntered, OtpPurpose purpose) {
@@ -117,16 +147,36 @@ public class OtpServiceImpl implements OtpService {
         }
     }
 
+    /**
+     * Verifies the OTP for login purposes using the provided phone number.
+     *
+     * @param phoneNumber The phone number associated with the OTP.
+     * @param otpEntered  The OTP entered by the user.
+     * @return {@code true} if the OTP is valid and not expired, {@code false} otherwise.
+     */
     @Override
     public boolean verifyLoginOtp(String phoneNumber, String otpEntered) {
         return verifyOtp(phoneNumber, otpEntered, OtpPurpose.LOGIN);
     }
 
+    /**
+     * Verifies the OTP for forgot password purposes using the provided phone number.
+     *
+     * @param phoneNumber The phone number associated with the OTP.
+     * @param otpEntered  The OTP entered by the user.
+     * @return {@code true} if the OTP is valid and not expired, {@code false} otherwise.
+     */
     @Override
     public boolean verifyOtp(String phoneNumber, String otpEntered) {
         return verifyOtp(phoneNumber, otpEntered, OtpPurpose.FORGOT_PASSWORD);
     }
 
+    /**
+     * Deletes all OTPs associated with the given identifier (phone number or email).
+     *
+     * @param identifier The identifier (phone number or email) for which OTPs should be deleted.
+     * @throws AnyException If an error occurs during OTP deletion.
+     */
     @Override
     @Transactional
     public void deleteOtpByIdentifier(String identifier) {
@@ -144,6 +194,13 @@ public class OtpServiceImpl implements OtpService {
         }
     }
 
+    /**
+     * Sends an OTP to the specified phone number using Twilio's messaging service.
+     *
+     * @param toPhone The phone number to which the OTP should be sent.
+     * @param otp     The OTP to be sent.
+     * @throws AnyException If an error occurs while sending the OTP via Twilio or due to unexpected issues.
+     */
     @Override
     public void sendOtp(String toPhone, String otp) {
         try {

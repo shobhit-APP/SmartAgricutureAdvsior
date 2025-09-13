@@ -34,17 +34,14 @@ public class SecurityConfig {
     private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/v1/auth/**",
+            "/v1/auth/login",
+            "/v1/auth/register",
             "/v1/home/**",
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
-            "/internal/**",
-            "/v1/images/file/**",
             "/api/register",
-            "/api/weather/**",
-            "/api/weather/advice"
-
+            "/api/weather/**"
     };
 
     @Autowired
@@ -68,9 +65,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Publicly accessible endpoints
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        // All other endpoints require authentication (Active and Verified status)
+                        .requestMatchers("/internal/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(authorizationFilter, UsernamePasswordAuthenticationFilter.class)

@@ -1,14 +1,24 @@
 package com.example.common.util;
 
+/**
+ * Utility class for password validation.
+ * Provides methods to check if a password meets specific complexity requirements
+ * and to generate detailed error messages for invalid passwords.
+ */
 public class PasswordUtil {
 
     /**
-     * Validate password with rules:
-     * - At least 8 characters
-     * - At least one uppercase letter
-     * - At least one lowercase letter
-     * - At least one digit
-     * - At least one special character (@, #, $, %, etc.)
+     * Validates a password against complexity rules:
+     * <ul>
+     *     <li>At least 8 characters long</li>
+     *     <li>At least one uppercase letter (A-Z)</li>
+     *     <li>At least one lowercase letter (a-z)</li>
+     *     <li>At least one digit (0-9)</li>
+     *     <li>At least one special character (@, $, !, %, *, ?, &)</li>
+     * </ul>
+     *
+     * @param password The password to validate.
+     * @return {@code true} if the password meets all complexity rules, {@code false} otherwise.
      */
     public static boolean isValidPassword(String password) {
         if (password == null) {
@@ -26,7 +36,19 @@ public class PasswordUtil {
     }
 
     /**
-     * Returns a message if password is invalid, otherwise null.
+     * Validates a password and returns an error message if it does not meet complexity rules.
+     * The rules checked are:
+     * <ul>
+     *     <li>Password cannot be null or empty</li>
+     *     <li>At least 8 characters long</li>
+     *     <li>At least one uppercase letter (A-Z)</li>
+     *     <li>At least one lowercase letter (a-z)</li>
+     *     <li>At least one digit (0-9)</li>
+     *     <li>At least one special character (@, $, !, %, *, ?, &)</li>
+     * </ul>
+     *
+     * @param password The password to validate.
+     * @return A string containing an error message if the password is invalid, or {@code null} if the password is valid.
      */
     public static String validatePasswordMessage(String password) {
         if (password == null || password.trim().isEmpty()) {

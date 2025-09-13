@@ -24,16 +24,14 @@ public class AuthorizationFilter extends OncePerRequestFilter {
     private static final Logger logger = LoggerFactory.getLogger(AuthorizationFilter.class);
 
     private static final String[] PUBLIC_PATHS = {
-            "/v1/auth/**",
+            "/v1/auth/login",
+            "/v1/auth/register",
             "/v1/home/**",
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
-            "/internal/**",
             "/api/register",
-            "/api/weather",
-            "/api/weather/advice",
-            "/v1/images/file/**"
+            "/api/weather/**"
     };
 
     @Autowired
@@ -56,25 +54,11 @@ public class AuthorizationFilter extends OncePerRequestFilter {
             }
         }
 
-        // Extract token once and reuse
-        String token = userContext.validateAndExtractUser(request,response);
-        if (token == null) {
-            logger.warn("No JWT token found in Authorization header");
-            userContext.sendUnauthorizedResponse(response, "Authorization failed: Missing token");
-            return;
-        }
-
         // Validate and extract user
-        String username;
-        try {
-            username = userContext.validateAndExtractUser(request, response);
-            if (username == null) {
-                logger.warn("User validation failed for token");
-                return; // Response already handled by UserContext
-            }
-        } catch (IOException e) {
-            logger.error("Error validating user: {}", e.getMessage(), e);
-            userContext.sendUnauthorizedResponse(response, "Authorization failed: " + e.getMessage());
+        String username = userContext.validateAndExtractUser(request, response);
+        if (username == null) {
+            logger.warn("No valid JWT token found or user validation failed");
+            userContext.sendUnauthorizedResponse(response, "Authorization failed: Invalid or missing token");
             return;
         }
 
@@ -110,7 +94,7 @@ public class AuthorizationFilter extends OncePerRequestFilter {
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(userPrinciple, null, Collections.emptyList());
                 SecurityContextHolder.getContext().setAuthentication(authToken);
-                logger.debug("Authentication set for user: {} with status: {} and verification: {}",
+                logger.info("Successful authentication for user: {} with status: {} and verification: {}",
                         username, status, verificationStatus);
             } catch (Exception e) {
                 logger.error("Error setting authentication for user: {} - {}", username, e.getMessage(), e);

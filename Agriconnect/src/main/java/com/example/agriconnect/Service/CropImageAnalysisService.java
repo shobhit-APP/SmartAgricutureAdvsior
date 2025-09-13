@@ -1,4 +1,3 @@
-
 package com.example.agriconnect.Service;
 
 import com.cloudinary.Cloudinary;
@@ -23,6 +22,12 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * Service class for analyzing crop images to identify diseases and provide detailed analysis.
+ * Integrates with Cloudinary for image storage, a Flask API for image analysis, and Gemini AI for
+ * enhancing analysis results. Supports localization in English and Hindi, and saves results to the
+ * database. Provides methods for image upload, analysis, status checking, and cleanup of old images.
+ */
 @Slf4j
 @Service
 public class CropImageAnalysisService {
@@ -30,10 +35,9 @@ public class CropImageAnalysisService {
     @Value("${flask.api.url3:http://localhost:8082}")
     private String flaskApiUrl3;
 
-
-
     @Autowired
     private CropDiseaseRepo cropDiseaseRepository;
+
     @Autowired
     private UserRepo userRepo;
 
@@ -49,7 +53,13 @@ public class CropImageAnalysisService {
     private final Cloudinary cloudinary;
     private final List<String> allowedExtensions = Arrays.asList("jpg", "jpeg", "png", "jfif", "heic");
 
-    // Initialize Cloudinary with credentials
+    /**
+     * Constructs a new {@code CropImageAnalysisService} with Cloudinary configuration.
+     *
+     * @param cloudName the Cloudinary cloud name
+     * @param apiKey    the Cloudinary API key
+     * @param apiSecret the Cloudinary API secret
+     */
     public CropImageAnalysisService(
             @Value("${cloudinary.cloud.name}") String cloudName,
             @Value("${cloudinary.api.key}") String apiKey,
@@ -61,7 +71,19 @@ public class CropImageAnalysisService {
                 "secure", true));
     }
 
-    // ---------------- Image upload and analysis ----------------
+    /**
+     * Analyzes an uploaded crop image to identify diseases and provides detailed results.
+     * Validates the image, uploads it to Cloudinary, sends it to a Flask API for analysis,
+     * enhances results with Gemini AI, saves the analysis to the database, and returns
+     * formatted results in English and Hindi.
+     *
+     * @param file   the image file to analyze (must be in allowed formats: jpg, jpeg, png, jfif, heic)
+     * @param userId the ID of the user associated with the analysis
+     * @return a {@link Map} containing analysis results (HTML and plain text in English and Hindi),
+     *         image URL, filename, public ID, and success status
+     * @throws IOException      if an error occurs during file processing
+     * @throws AnyException     if the image is invalid, the user is not found, or analysis fails
+     */
     public Map<String, Object> analyzeImage(MultipartFile file, Long userId) throws IOException {
         Map<String, Object> response;
         if (!isValidImageFile(file)) {
@@ -100,6 +122,13 @@ public class CropImageAnalysisService {
         }
     }
 
+    /**
+     * Validates whether the provided file is a valid image file based on its extension.
+     *
+     * @param file the image file to validate
+     * @return {@code true} if the file is non-empty and has an allowed extension (jpg, jpeg, png, jfif, heic),
+     *         {@code false} otherwise
+     */
     private boolean isValidImageFile(MultipartFile file) {
         if (file.isEmpty() || file.getOriginalFilename() == null) {
             return false;
@@ -108,17 +137,36 @@ public class CropImageAnalysisService {
         return allowedExtensions.contains(extension);
     }
 
+    /**
+     * Extracts the file extension from the provided filename.
+     *
+     * @param filename the name of the file
+     * @return the file extension (without the dot), or an empty string if no extension is found
+     */
     private String getFileExtension(String filename) {
         int lastDotIndex = filename.lastIndexOf('.');
         return lastDotIndex > 0 ? filename.substring(lastDotIndex + 1) : "";
     }
 
+    /**
+     * Generates a unique filename for the uploaded image by combining a UUID with the original file extension.
+     *
+     * @param originalFilename the original name of the uploaded file
+     * @return a unique filename in the format {@code UUID.extension}
+     */
     private String generateUniqueFilename(String originalFilename) {
         String extension = getFileExtension(originalFilename);
         String uuid = UUID.randomUUID().toString();
         return uuid + "." + extension;
     }
 
+    /**
+     * Sends the image file to a Flask API for disease analysis.
+     *
+     * @param file the image file to send for analysis
+     * @return the JSON response from the Flask API as a string
+     * @throws AnyException if the API call fails or returns a non-200 status
+     */
     private String sendToFlaskAPI(MultipartFile file) {
         try {
             HttpHeaders headers = new HttpHeaders();
@@ -151,7 +199,12 @@ public class CropImageAnalysisService {
         }
     }
 
-    // ---------------- Analysis status ----------------
+    /**
+     * Retrieves the analysis status for an image based on its filename.
+     *
+     * @param filename the unique filename of the image
+     * @return the status of the analysis ("completed" if the image exists in Cloudinary, or "error.image_analysis_no_file" if not)
+     */
     public String getAnalysisStatus(String filename) {
         try {
             String publicId = "crop-images/" + filename;
@@ -163,7 +216,11 @@ public class CropImageAnalysisService {
         }
     }
 
-    // ---------------- Cleanup old files ----------------
+    /**
+     * Deletes images from Cloudinary that are older than the specified number of days.
+     *
+     * @param daysOld the age threshold (in days) for images to be deleted
+     */
     public void cleanupOldFiles(int daysOld) {
         try {
             Map<String, Object> listParams = ObjectUtils.asMap(
@@ -196,7 +253,17 @@ public class CropImageAnalysisService {
         }
     }
 
-    // ---------------- Process JSON response from Flask API ----------------
+    /**
+     * Processes the JSON response from the Flask API, enhances it with Gemini AI, saves the results to the database,
+     * and generates formatted analysis results in English and Hindi.
+     *
+     * @param jsonNode the JSON response from the Flask API
+     * @param userId   the ID of the user associated with the analysis
+     * @param imageUrl the Cloudinary URL of the uploaded image
+     * @return a {@link Map} containing formatted analysis results (HTML and plain text in English and Hindi),
+     *         success status, and other metadata
+     * @throws AnyException if the JSON response is invalid, the user is not found, or processing fails
+     */
     public Map<String, Object> processImageAnalysis(JsonNode jsonNode, Long userId, String imageUrl) {
         Map<String, Object> response = new HashMap<>();
         try {
@@ -273,7 +340,14 @@ public class CropImageAnalysisService {
         return response;
     }
 
-    // ---------------- Gemini AI Enhancement ----------------
+    /**
+     * Enhances disease analysis data using the Gemini AI API, falling back to original data if enhancement fails.
+     *
+     * @param diseaseName the name of the disease to enhance
+     * @param cropTypeEn  the crop type in English (optional)
+     * @param cropTypeHi  the crop type in Hindi (optional)
+     * @return a {@link Map} containing enhanced disease information, or an empty map if enhancement fails
+     */
     private Map<String, String> tryEnhanceWithGemini(String diseaseName, String cropTypeEn, String cropTypeHi) {
         try {
             if (diseaseName == null || diseaseName.trim().isEmpty() || "Unknown disease".equals(diseaseName)) {
@@ -301,6 +375,14 @@ public class CropImageAnalysisService {
         }
     }
 
+    /**
+     * Builds a prompt for the Gemini AI API to enhance disease information.
+     *
+     * @param diseaseName the name of the disease to enhance
+     * @param cropTypeEn  the crop type in English (optional)
+     * @param cropTypeHi  the crop type in Hindi (optional)
+     * @return a formatted prompt string for the Gemini AI API
+     */
     private String buildEnhancementPrompt(String diseaseName, String cropTypeEn, String cropTypeHi) {
         String plantContext = (cropTypeEn != null && !cropTypeEn.trim().isEmpty()) ?
                 " affecting " + cropTypeEn : "";
@@ -327,6 +409,12 @@ public class CropImageAnalysisService {
         );
     }
 
+    /**
+     * Validates the enhanced data returned by the Gemini AI API to ensure all required fields are present and non-empty.
+     *
+     * @param data the enhanced data map to validate
+     * @return {@code true} if all required fields are present and non-empty, {@code false} otherwise
+     */
     private boolean validateEnhancedData(Map<String, String> data) {
         String[] requiredFields = {
                 "name_en", "name_hi", "cause_en", "cause_hi",
@@ -342,6 +430,14 @@ public class CropImageAnalysisService {
         return true;
     }
 
+    /**
+     * Extracts a value from a JSON node, returning a default value if the field is missing or empty.
+     *
+     * @param parentNode   the JSON node containing the field
+     * @param fieldName    the name of the field to extract
+     * @param defaultValue the default value to return if the field is missing or empty
+     * @return the extracted field value, or the default value if not found
+     */
     private String getNodeValue(JsonNode parentNode, String fieldName, String defaultValue) {
         if (parentNode.has(fieldName) && !parentNode.get(fieldName).isNull()) {
             String value = parentNode.get(fieldName).asText().trim();
@@ -350,6 +446,16 @@ public class CropImageAnalysisService {
         return defaultValue;
     }
 
+    /**
+     * Generates an HTML-formatted string for the analysis results in the specified language.
+     *
+     * @param name      the disease name
+     * @param cause     the cause of the disease
+     * @param symptoms  the symptoms of the disease
+     * @param suggestion the treatment or management suggestions
+     * @param language  the language code ("en" for English, "hi" for Hindi)
+     * @return an HTML string representing the formatted analysis results
+     */
     private String generateResultHtml(String name, String cause, String symptoms, String suggestion, String language) {
         String diseaseLabel = language.equals("hi") ? "रोग:" : "Disease:";
         String causeLabel = language.equals("hi") ? "कारण:" : "Cause:";
@@ -382,6 +488,16 @@ public class CropImageAnalysisService {
         );
     }
 
+    /**
+     * Generates a plain text string for the analysis results.
+     *
+     * @param name      the disease name
+     * @param cause     the cause of the disease
+     * @param symptoms  the symptoms of the disease
+     * @param suggestion the treatment or management suggestions
+     * @param cropType  the crop type affected by the disease
+     * @return a plain text string representing the analysis results
+     */
     private String generatePlainTextResult(String name, String cause, String symptoms, String suggestion, String cropType) {
         return String.format(
                 "Crop Type: %s\n\n" +
@@ -397,6 +513,12 @@ public class CropImageAnalysisService {
         );
     }
 
+    /**
+     * Escapes HTML characters in the input string to prevent XSS attacks.
+     *
+     * @param input the input string to escape
+     * @return the escaped string, or an empty string if the input is null
+     */
     private String escapeHtml(String input) {
         if (input == null) return "";
         return input.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")

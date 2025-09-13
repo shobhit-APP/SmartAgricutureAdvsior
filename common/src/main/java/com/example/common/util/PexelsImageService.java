@@ -4,12 +4,16 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+/**
+ * Service class for fetching image URLs from the Pexels API based on a search query.
+ * Uses the Pexels API to retrieve a single image URL for a given crop name.
+ */
 @Service
 public class PexelsImageService {
 
@@ -20,6 +24,13 @@ public class PexelsImageService {
     @Value("${pexels.api.key}")
     private String apiKey;
 
+    /**
+     * Fetches an image URL from the Pexels API for the specified crop name.
+     * Makes a GET request to the Pexels API with the crop name as a query parameter and returns the medium-sized image URL.
+     *
+     * @param cropName The name of the crop to search for (e.g., "wheat", "rice").
+     * @return The URL of the medium-sized image from Pexels, or {@code null} if no image is found or an error occurs.
+     */
     public String fetchImageUrl(String cropName) {
         if (apiKey == null || apiKey.isEmpty()) {
             logger.error("Pexels API key is not configured.");

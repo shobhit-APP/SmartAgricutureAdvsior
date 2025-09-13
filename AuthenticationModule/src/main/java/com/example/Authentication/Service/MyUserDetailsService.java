@@ -10,6 +10,11 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+/**
+ * Service class for loading user details for Spring Security authentication.
+ * Implements {@link UserDetailsService} to retrieve user information from the database
+ * and convert it into a {@link UserDetails} object for authentication purposes.
+ */
 @Slf4j
 @Service
 public class MyUserDetailsService implements UserDetailsService {
@@ -17,6 +22,15 @@ public class MyUserDetailsService implements UserDetailsService {
     @Autowired
     private UserServiceImpl userService;
 
+    /**
+     * Loads user details by username for Spring Security authentication.
+     * Retrieves the user from the database using the provided username and returns a
+     * {@link UserPrinciple} object containing the user's details.
+     *
+     * @param username The username of the user to load.
+     * @return A {@link UserDetails} object representing the user's details.
+     * @throws UsernameNotFoundException If the username is empty, null, or the user is not found in the database.
+     */
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         if (!StringUtils.hasText(username)) {

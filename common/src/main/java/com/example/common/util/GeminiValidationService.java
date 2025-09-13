@@ -9,6 +9,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 
+/**
+ * Service class for validating crop images using the Gemini API.
+ * Processes uploaded images to determine if they depict a crop or plant by interacting with the Gemini API.
+ */
 @Service
 public class GeminiValidationService {
 
@@ -16,10 +20,24 @@ public class GeminiValidationService {
 
     private final GeminiApiHelper geminiApiHelper;
 
+    /**
+     * Constructs a GeminiValidationService instance with the specified Gemini API helper.
+     *
+     * @param geminiApiHelper The helper class for interacting with the Gemini API.
+     */
     public GeminiValidationService(GeminiApiHelper geminiApiHelper) {
         this.geminiApiHelper = geminiApiHelper;
     }
 
+    /**
+     * Validates whether an uploaded image depicts a crop or plant using the Gemini API.
+     * Converts the image to Base64 format and sends it to the Gemini API with a prompt to determine
+     * if the image represents a crop or plant.
+     *
+     * @param file The uploaded image file to validate.
+     * @return {@code true} if the image is identified as a crop or plant, {@code false} otherwise.
+     * @throws AnyException If the file is empty, invalid, or if the Gemini API call fails.
+     */
     public boolean isValidCropImage(MultipartFile file) throws AnyException {
         try {
             if (file == null || file.isEmpty()) {

@@ -13,6 +13,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
+/**
+ * Service class for handling JWT (JSON Web Token) generation and authentication response creation.
+ * Implements the {@link JwTService} interface to provide methods for generating authentication tokens.
+ */
 @Slf4j
 @Service
 public class JwtService implements JwTService {
@@ -26,6 +30,21 @@ public class JwtService implements JwTService {
     @Autowired
     private UserRepo userRepo;
 
+    /**
+     * Generates an authentication response containing a JWT token and a refresh token for the given user.
+     * Validates user data, generates tokens, updates user status, and returns the authentication response.
+     *
+     * @param user The {@link UserDetails1} object containing user information such as user ID, username,
+     *             full name, status, and verification status.
+     * @return A {@link ResponseEntity} containing either:
+     *         <ul>
+     *             <li>A successful response with an {@link AuthResponseDTO} containing the JWT and refresh token.</li>
+     *             <li>A bad request response with an error message if user data or status is invalid.</li>
+     *             <li>An internal server error response if an unexpected error occurs.</li>
+     *         </ul>
+     * @throws IllegalArgumentException If the user's status or verification status is invalid.
+     * @throws Exception If an unexpected error occurs during token generation or user data processing.
+     */
     @Override
     public ResponseEntity<?> generateAuthResponseForUser(UserDetails1 user) {
         try {

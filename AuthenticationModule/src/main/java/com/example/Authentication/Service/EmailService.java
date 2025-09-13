@@ -1,28 +1,44 @@
 package com.example.Authentication.Service;
 
 import com.example.Authentication.Interface.EmailServiceInterface;
-import com.example.Authentication.Interface.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+/**
+ * Service class for sending emails related to authentication, including OTPs, password update confirmations,
+ * and user verification links. Implements the {@link EmailServiceInterface} to provide email functionality
+ * using {@link JavaMailSender}.
+ */
 @Service
 public class EmailService implements EmailServiceInterface {
 
     @Autowired
     private JavaMailSender mailSender;
 
-
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    /**
+     * Validates an email address using a regular expression pattern.
+     *
+     * @param email the email address to validate
+     * @return {@code true} if the email is non-null and matches the pattern, {@code false} otherwise
+     */
     @Override
     public boolean checkEmail(String email) {
         return email != null && email.matches("^[A-Za-z0-9+_.-]+@(.+)$");
     }
 
+    /**
+     * Sends an OTP to the specified email address for authentication or password reset purposes.
+     *
+     * @param email the recipient's email address
+     * @param otp   the one-time password to include in the email
+     * @return {@code true} if the email is sent successfully, {@code false} if the email is invalid or sending fails
+     */
     @Override
     public boolean sendOtp(String email, String otp) {
         try {
@@ -45,6 +61,11 @@ public class EmailService implements EmailServiceInterface {
         }
     }
 
+    /**
+     * Sends a confirmation email to the user after a successful password update.
+     *
+     * @param email the recipient's email address
+     */
     @Override
     public void sendPasswordUpdateConfirmation(String email) {
         SimpleMailMessage message = new SimpleMailMessage();
@@ -58,6 +79,12 @@ public class EmailService implements EmailServiceInterface {
         mailSender.send(message);
     }
 
+    /**
+     * Sends a verification link to the user for account activation.
+     *
+     * @param email           the recipient's email address
+     * @param verificationLink the verification link to include in the email
+     */
     @Override
     public void sendVerificationLink(String email, String verificationLink) {
         SimpleMailMessage message = new SimpleMailMessage();

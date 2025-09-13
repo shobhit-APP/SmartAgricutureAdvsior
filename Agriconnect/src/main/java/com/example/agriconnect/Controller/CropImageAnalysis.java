@@ -1,8 +1,17 @@
 package com.example.agriconnect.Controller;
+
 import com.example.Authentication.Components.UserPrinciple;
 import com.example.agriconnect.Service.CropImageAnalysisService;
 import com.example.common.Exception.AnyException;
 import com.example.common.util.GeminiValidationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,6 +28,7 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/api")
+@Tag(name = "Crop Image Analysis API", description = "Endpoints for analyzing crop images, checking analysis status, and cleaning up old files")
 public class CropImageAnalysis {
 
     @Autowired
@@ -29,8 +39,37 @@ public class CropImageAnalysis {
 
     @PostMapping("/analyzeImage")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> analyzeImage(@RequestParam("file") MultipartFile file,
-                                          @AuthenticationPrincipal UserPrinciple userPrinciples) {
+    @Operation(
+            summary = "Analyze a crop image",
+            description = "Uploads and analyzes a crop image to detect diseases or issues, returning analysis results for the authenticated user."
+    )
+    @SecurityRequirement(name = "Bearer Authentication")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Image analyzed successfully",
+                    content = @Content(schema = @Schema(implementation = Map.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid or empty image file, or analysis failed",
+                    content = @Content(schema = @Schema(implementation = Map.class))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized access - authentication required",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Server error during image processing or analysis",
+                    content = @Content(schema = @Schema(implementation = Map.class))
+            )
+    })
+    public ResponseEntity<?> analyzeImage(
+            @Parameter(description = "Image file to analyze (e.g., JPEG, PNG)", required = true)
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal UserPrinciple userPrinciples) {
         // Check if file is empty
         if (file == null || file.isEmpty()) {
             return ResponseEntity.badRequest().body(createErrorResponse("File upload is empty. Please provide an image."));
@@ -71,8 +110,33 @@ public class CropImageAnalysis {
 
     @GetMapping("/analysisStatus/{filename}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<String> getAnalysisStatus(@PathVariable String filename) {
+    @Operation(
+            summary = "Get analysis status",
+            description = "Retrieves the status of a previous image analysis by filename for the authenticated user."
+    )
+    @SecurityRequirement(name = "Bearer Authentication")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Analysis status retrieved successfully",
+                    content = @Content(schema = @Schema(type = "string"))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized access - authentication required",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Server error retrieving analysis status",
+                    content = @Content(schema = @Schema(type = "string"))
+            )
+    })
+    public ResponseEntity<String> getAnalysisStatus(
+            @Parameter(description = "Filename of the analyzed image", required = true, example = "crop_image.jpg")
+            @PathVariable String filename) {
         try {
+            // Retrieve analysis status for the given filename
             String status = cropImageAnalysisService.getAnalysisStatus(filename);
             return ResponseEntity.ok(status);
         } catch (Exception e) {
@@ -84,10 +148,40 @@ public class CropImageAnalysis {
 
     @DeleteMapping("/cleanupOldFiles/{days}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> cleanupOldFiles(@PathVariable int days) {
+    @Operation(
+            summary = "Clean up old analysis files",
+            description = "Deletes image analysis files older than the specified number of days. Restricted to admin users."
+    )
+    @SecurityRequirement(name = "Bearer Authentication")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Old files cleaned up successfully",
+                    content = @Content(schema = @Schema(implementation = Map.class))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized access - authentication required",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - admin role required",
+                    content = @Content
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Server error during file cleanup",
+                    content = @Content(schema = @Schema(implementation = Map.class))
+            )
+    })
+    public ResponseEntity<?> cleanupOldFiles(
+            @Parameter(description = "Number of days to determine age of files to delete", required = true, example = "30")
+            @PathVariable int days) {
         try {
+            // Execute cleanup of old files
             cropImageAnalysisService.cleanupOldFiles(days);
-            return ResponseEntity.ok(createSuccessResponse("Old files cleanup executed."));
+            return ResponseEntity.ok(createSuccessResponse());
         } catch (Exception e) {
             log.error("Error during cleanup of old files: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -104,10 +198,10 @@ public class CropImageAnalysis {
     }
 
     // Helper method to create standardized success response
-    private Map<String, Object> createSuccessResponse(String message) {
+    private Map<String, Object> createSuccessResponse() {
         Map<String, Object> successResponse = new HashMap<>();
         successResponse.put("success", true);
-        successResponse.put("message", message);
+        successResponse.put("message", "Old files cleanup executed.");
         return successResponse;
     }
 }

@@ -11,11 +11,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Utility class for handling location-related operations, including state, district, and market resolution.
+ * Provides methods to fetch location data from a repository with fallback to default values and calculates
+ * the nearest location based on geographic coordinates using the Haversine formula.
+ */
 @Slf4j
 @Component
 public class LocationHelper {
+
     @Autowired
     private LocationMappingRepository locationMappingRepository;
+
     // Fallback default options
     private final List<String> DEFAULT_STATES = Arrays.asList(
             "Karnataka", "Maharashtra", "Gujarat", "Tamil Nadu", "Andhra Pradesh",
@@ -40,6 +47,12 @@ public class LocationHelper {
     // Reference coordinates for districts (for distance calculation)
     private final Map<String, double[]> DISTRICT_COORDINATES = new HashMap<>();
 
+    /**
+     * Constructs a LocationHelper instance with the specified repository and initializes
+     * the district coordinates map for distance calculations.
+     *
+     * @param locationMappingRepository The repository for accessing location mappings.
+     */
     public LocationHelper(LocationMappingRepository locationMappingRepository) {
         this.locationMappingRepository = locationMappingRepository;
         // Initialize reference coordinates for districts (latitude, longitude)
@@ -60,19 +73,41 @@ public class LocationHelper {
         DISTRICT_COORDINATES.put("Jaipur", new double[] { 26.91, 75.79 });
     }
 
+    /**
+     * Retrieves the list of default states.
+     *
+     * @return A {@link List} of default state names.
+     */
     public List<String> getStates() {
         return DEFAULT_STATES;
     }
 
+    /**
+     * Retrieves the list of default districts.
+     *
+     * @return A {@link List} of default district names.
+     */
     public List<String> getDistricts() {
         return DEFAULT_DISTRICTS;
     }
 
+    /**
+     * Retrieves the list of default markets.
+     *
+     * @return A {@link List} of default market names.
+     */
     public List<String> getMarkets() {
         return DEFAULT_MARKETS;
     }
 
-    // Method to get nearest location based on lat/lon
+    /**
+     * Finds the nearest location (state, district, market) based on the provided coordinates.
+     * Uses the Haversine formula to calculate distances and falls back to default values if coordinates are null.
+     *
+     * @param latitude  The latitude coordinate, or null to use default values.
+     * @param longitude The longitude coordinate, or null to use default values.
+     * @return A {@link LocationMapping} object containing the nearest state, district, and market.
+     */
     public LocationMapping getNearestLocation(Double latitude, Double longitude) {
         LocationMapping nearest = new LocationMapping();
 
@@ -95,7 +130,13 @@ public class LocationHelper {
         return nearest;
     }
 
-    // Helper method to find the closest district
+    /**
+     * Finds the closest district to the given coordinates using the Haversine formula.
+     *
+     * @param latitude  The latitude coordinate.
+     * @param longitude The longitude coordinate.
+     * @return The name of the closest district, or "Lucknow" if no closer district is found.
+     */
     private String findClosestDistrict(double latitude, double longitude) {
         String closestDistrict = "Lucknow"; // Default district
         double minDistance = Double.MAX_VALUE;
@@ -113,7 +154,12 @@ public class LocationHelper {
         return closestDistrict;
     }
 
-    // Helper method to map district to state
+    /**
+     * Maps a district to its corresponding state.
+     *
+     * @param district The name of the district.
+     * @return The name of the state, or "Uttar Pradesh" if the district is not mapped.
+     */
     private String getStateForDistrict(String district) {
         return switch (district) {
             case "Basti", "Gorakhpur", "Varanasi", "Lucknow" -> "Uttar Pradesh";
@@ -131,7 +177,12 @@ public class LocationHelper {
         };
     }
 
-    // Helper method to map state to market
+    /**
+     * Maps a state to a representative market.
+     *
+     * @param state The name of the state.
+     * @return The name of the market, or "Krishi Upaj Mandi" if the state is not mapped.
+     */
     private String getMarketForState(String state) {
         return switch (state) {
             case "Uttar Pradesh" -> "Krishi Upaj Mandi";
@@ -147,7 +198,15 @@ public class LocationHelper {
         };
     }
 
-    // Helper method to calculate distance between two points
+    /**
+     * Calculates the distance between two geographic points using the Haversine formula.
+     *
+     * @param lat1 The latitude of the first point.
+     * @param lon1 The longitude of the first point.
+     * @param lat2 The latitude of the second point.
+     * @param lon2 The longitude of the second point.
+     * @return The distance in kilometers between the two points.
+     */
     private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
         final int R = 6371; // Radius of the earth in km
 
@@ -155,14 +214,20 @@ public class LocationHelper {
         double lonDistance = Math.toRadians(lon2 - lon1);
         double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
                 + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                        * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
         return R * c;
     }
 
     /**
-     * Get location mappings from DB or fallback helper
+     * Resolves a location based on latitude and longitude, querying the database first and falling back to
+     * the nearest location if the database query fails or returns no results.
+     *
+     * @param lat The latitude coordinate, or null to return an empty {@link LocationMapping}.
+     * @param lon The longitude coordinate, or null to return an empty {@link LocationMapping}.
+     * @return A {@link LocationMapping} object containing the state, district, and market, or an empty
+     *         {@link LocationMapping} if coordinates are null.
      */
     public LocationMapping resolveLocation(Double lat, Double lon) {
         if (lat == null || lon == null) {
@@ -181,7 +246,9 @@ public class LocationHelper {
     }
 
     /**
-     * Get distinct states/districts/markets (DB first, helper fallback)
+     * Retrieves a list of distinct states from the database, falling back to the default states if the query fails.
+     *
+     * @return A {@link List} of distinct state names.
      */
     public List<String> GetStates() {
         try {
@@ -192,6 +259,11 @@ public class LocationHelper {
         }
     }
 
+    /**
+     * Retrieves a list of distinct districts from the database, falling back to the default districts if the query fails.
+     *
+     * @return A {@link List} of distinct district names.
+     */
     public List<String> GetDistricts() {
         try {
             return locationMappingRepository.findDistinctDistricts();
@@ -201,6 +273,11 @@ public class LocationHelper {
         }
     }
 
+    /**
+     * Retrieves a list of distinct markets from the database, falling back to the default markets if the query fails.
+     *
+     * @return A {@link List} of distinct market names.
+     */
     public List<String> GetMarkets() {
         try {
             return locationMappingRepository.findDistinctMarkets();

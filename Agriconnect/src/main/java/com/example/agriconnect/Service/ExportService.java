@@ -18,6 +18,11 @@ import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Service class for exporting agricultural data to PDF reports. Generates reports for crop disease,
+ * crop recommendation, and crop price data based on user-specific queries, with support for English
+ * and Hindi languages. Uses the iText library to create structured PDF tables.
+ */
 @Service
 public class ExportService {
 
@@ -33,8 +38,23 @@ public class ExportService {
     @Autowired
     private UserRepo userRepo;
 
+    /**
+     * Generates a PDF report for crop disease, recommendation, or price data based on user ID and
+     * query parameters. Supports filtering by crop type, cause, state, or crop name, and generates
+     * tables in English or Hindi based on the specified language.
+     *
+     * @param cropType the crop type to filter disease data (optional, used for disease reports)
+     * @param cause    the cause to filter disease data (optional, used for disease reports)
+     * @param lang     the language for the report ("en" for English, "hi" for Hindi)
+     * @param userId   the ID of the user whose data is to be included in the report
+     * @param state    the state to filter crop price data (optional, used for price reports)
+     * @param cropName the crop name to filter recommendation data (optional, used for recommendation reports)
+     * @param page     the type of report ("CropPrice_DashBoard", "CropRecommend_DashBoard", or default for disease report)
+     * @return a byte array containing the generated PDF report
+     * @throws Exception if an error occurs during PDF generation
+     */
     public byte[] exportToPDFByUserId(String cropType, String cause, String lang,
-                                      Long userId, String state, String crop_name, String page) throws Exception {
+                                      Long userId, String state, String cropName, String page) throws Exception {
 
         List<CropDisease> diseases = null;
         List<CropRecommendation> cropRecommendations = null;
@@ -42,7 +62,7 @@ public class ExportService {
 
         boolean hasCropTypeAndCause = cropType != null && !cropType.isEmpty() && cause != null && !cause.isEmpty();
         boolean hasState = state != null && !state.isEmpty();
-        boolean hasCropName = crop_name != null && !crop_name.isEmpty();
+        boolean hasCropName = cropName != null && !cropName.isEmpty();
 
         // ----- Query selection -----
         if ("hi".equalsIgnoreCase(lang)) {
@@ -60,7 +80,7 @@ public class ExportService {
                 }
             } else if (Objects.equals(page, "CropRecommend_DashBoard")) {
                 if (hasCropName) {
-                    cropRecommendations = cropRecommendationRepo.findByUserIdAndPredictedCrop(userId, crop_name);
+                    cropRecommendations = cropRecommendationRepo.findByUserIdAndPredictedCrop(userId, cropName);
                 } else {
                     cropRecommendations = cropRecommendationRepo.findByUserDetails1UserId(userId);
                 }
@@ -82,7 +102,7 @@ public class ExportService {
                 }
             } else if (Objects.equals(page, "CropRecommend_DashBoard")) {
                 if (hasCropName) {
-                    cropRecommendations = cropRecommendationRepo.findByUserIdAndPredictedCrop(userId, crop_name);
+                    cropRecommendations = cropRecommendationRepo.findByUserIdAndPredictedCrop(userId, cropName);
                 } else {
                     cropRecommendations = cropRecommendationRepo.findByUserDetails1UserId(userId);
                 }
@@ -114,7 +134,7 @@ public class ExportService {
             if ("hi".equalsIgnoreCase(lang)) {
                 addTableHeader(table, new String[]{"राज्य", "ज़िला", "बाज़ार", "फ़सल का नाम", "न्यूनतम कीमत", "अधिकतम कीमत", "सुझाई गई कीमत"}, headerFont);
             } else {
-                addTableHeader(table, new String[]{"State", "District", "Market", "Crop", "Min Price", "Max Price", "Suggested Price"}, headerFont);
+                addTableHeader(table, new String[]{"State", "District", "Market", "Crop", "Min Price", "Max Price", "Best Price"}, headerFont);
             }
 
             for (Crop crop : cropList) {
@@ -124,8 +144,7 @@ public class ExportService {
                 table.addCell(new PdfPCell(new Phrase(crop.getCropName(), bodyFont)));
                 table.addCell(new PdfPCell(new Phrase(String.valueOf(crop.getMinPrice()), bodyFont)));
                 table.addCell(new PdfPCell(new Phrase(String.valueOf(crop.getMaxPrice()), bodyFont)));
-//                table.addCell(new PdfPCell(new Phrase(String.valueOf(crop.getSuggestedPrice()), bodyFont))); // Corrected to SuggestedPrice
-                table.addCell(new PdfPCell(new Phrase(String.valueOf(crop.getBestPrice()), bodyFont))); // Best Predicted Price
+                table.addCell(new PdfPCell(new Phrase(String.valueOf(crop.getBestPrice()), bodyFont)));
             }
             document.add(table);
 
@@ -174,6 +193,13 @@ public class ExportService {
         return out.toByteArray();
     }
 
+    /**
+     * Adds headers to a PDF table with the specified font and background color.
+     *
+     * @param table   the {@link PdfPTable} to add headers to
+     * @param headers the array of header titles
+     * @param font    the font to use for header text
+     */
     private void addTableHeader(PdfPTable table, String[] headers, Font font) {
         for (String header : headers) {
             PdfPCell cell = new PdfPCell(new Phrase(header, font));

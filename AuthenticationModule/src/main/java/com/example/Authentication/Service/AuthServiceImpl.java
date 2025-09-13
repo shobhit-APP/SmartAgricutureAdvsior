@@ -21,6 +21,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.Map;
 
+/**
+ * Service class implementing authentication and verification logic for users.
+ * Handles login via username, email, or phone number (with password or OTP), password resets,
+ * and user verification using email tokens. Integrates with Spring Security for authentication,
+ * OTP services for phone-based login, and Redis for managing blocked users.
+ */
 @Service
 public class AuthServiceImpl implements AuthService, AuthHelper {
     private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
@@ -45,6 +51,18 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
     @Autowired
     private validateNull validateNull;
 
+    /**
+     * Handles user login requests using username, email, phone number, or OTP-based authentication.
+     * Supports password-based login and OTP-based login for phone numbers, with checks for blocked,
+     * deleted, or unverified accounts.
+     *
+     * @param username    the username for login (optional)
+     * @param phoneNumber the phone number for login (optional)
+     * @param email       the email for login (optional)
+     * @param password    the password for authentication (optional for OTP login)
+     * @return a {@link ResponseEntity} containing authentication response (JWT token) or error details
+     * @throws AnyException if authentication fails due to invalid credentials or user status
+     */
     @Override
     public ResponseEntity<?> handleLoginRequest(String username, String phoneNumber, String email, String password) {
         logger.info("Login request: username={}, email={}, phone={}", username, email, phoneNumber);
@@ -100,7 +118,6 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
             logger.info("Login successful for userId={}", user.getUserId());
             return jwTService.generateAuthResponseForUser(user);
         } catch (AnyException ae) {
-            // If you throw AnyException with proper status+message elsewhere, preserve it
             logger.warn("Authentication error (custom): {}", ae.getMessage());
             return ResponseEntity.status(HttpStatus.valueOf(ae.getStatusCode())).body(Map.of("error", ae.getMessage()));
         } catch (Exception e) {
@@ -110,6 +127,13 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
         }
     }
 
+    /**
+     * Initiates OTP-based login by sending an OTP to the provided phone number.
+     *
+     * @param phoneNumber the phone number to send the OTP to
+     * @return a {@link ResponseEntity} containing a success message, masked phone number, and verification URL
+     * @throws AnyException if the phone number is invalid or OTP sending fails
+     */
     @Override
     public ResponseEntity<?> loginWithPhoneAndOtp(String phoneNumber) {
         try {
@@ -132,9 +156,15 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
         }
     }
 
+    /**
+     * Initiates a password reset by sending an OTP to the provided phone number.
+     *
+     * @param phoneNumber the phone number associated with the user account
+     * @return a {@link ResponseEntity} containing a success message and masked phone number
+     * @throws AnyException if the phone number is invalid or OTP sending fails
+     */
     @Override
     public ResponseEntity<?> forgetPassword(String phoneNumber) {
-        // Fixed validation: check for null/empty
         if (validateNull.isNullOrEmpty(phoneNumber)) {
             return ResponseEntity.badRequest().body(Map.of("error", "Phone number is required"));
         }
@@ -157,23 +187,28 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
         }
     }
 
+    /**
+     * Resets the user's password using the provided phone number and new password.
+     *
+     * @param phoneNumber the phone number associated with the user account
+     * @param newPassword the new password to set
+     * @return a {@link ResponseEntity} containing a success message or error details
+     * @throws AnyException if the phone number or password is invalid, or the reset fails
+     */
     @Override
     public ResponseEntity<?> resetPassword(String phoneNumber, String newPassword) {
         try {
-            // Validate input
             if (validateNull.isNullOrEmpty(phoneNumber) || validateNull.isNullOrEmpty(newPassword)) {
                 logger.warn("Phone number or new password is missing");
                 return ResponseEntity.badRequest().body(Map.of("error", "Phone number and new password are required"));
             }
 
-            // Find user
             UserDetails1 user = userRepo.findByContactNumber(phoneNumber);
             if (user == null) {
                 logger.warn("User not found for phone number: {}", phoneNumber);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
             }
 
-            // Update password
             boolean isUpdated = userService.resetPassword(phoneNumber, newPassword);
             if (!isUpdated) {
                 logger.error("Password reset failed for phone number: {}", phoneNumber);
@@ -194,6 +229,14 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
         }
     }
 
+    /**
+     * Verifies a user account using the provided email and token.
+     *
+     * @param email the email address of the user to verify
+     * @param token the verification token
+     * @return a {@link ResponseEntity} containing a success message or error details
+     * @throws AnyException if the email, token, or verification process is invalid
+     */
     @Override
     public ResponseEntity<?> verifyUser(String email, String token) {
         try {
@@ -227,12 +270,26 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
         }
     }
 
+    /**
+     * Updates the user's verification status to verified and saves it to the database.
+     * This method is transactional to ensure data consistency.
+     *
+     * @param user the {@link UserDetails1} object to verify
+     */
     @Transactional
     public void verifyUser(UserDetails1 user) {
         user.setVerificationStatus(UserDetails1.VerificationStatus.Verified);
         userRepo.save(user);
     }
 
+    /**
+     * Determines the login method based on provided credentials.
+     *
+     * @param username    the username (optional)
+     * @param email       the email (optional)
+     * @param phoneNumber the phone number (optional)
+     * @return the {@link LoginMethod} (USERNAME, EMAIL, or PHONE) based on the provided input
+     */
     @Override
     public LoginMethod determineLoginMethod(String username, String email, String phoneNumber) {
         if (!validateNull.isNullOrEmpty(username))
@@ -242,6 +299,12 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
         return LoginMethod.PHONE;
     }
 
+    /**
+     * Masks an email address to protect sensitive information.
+     *
+     * @param email the email address to mask
+     * @return the masked email address, or "****" if invalid
+     */
     public String maskEmail(String email) {
         if (email == null || !email.contains("@"))
             return "****";
@@ -254,6 +317,12 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
         return maskedName + "@" + domain;
     }
 
+    /**
+     * Masks a phone number to protect sensitive information, showing only the last four digits.
+     *
+     * @param phoneNumber the phone number to mask
+     * @return the masked phone number, or "****" if invalid
+     */
     @Override
     public String maskPhoneNumber(String phoneNumber) {
         if (phoneNumber == null || phoneNumber.length() <= 4)
@@ -261,9 +330,20 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
         return "****" + phoneNumber.substring(phoneNumber.length() - 4);
     }
 
+    /**
+     * Authenticates a user using the specified login method and credentials.
+     *
+     * @param method       the {@link LoginMethod} (USERNAME, EMAIL, or PHONE)
+     * @param username     the username (optional)
+     * @param email        the email (optional)
+     * @param phoneNumber  the phone number (optional)
+     * @param password     the password for authentication
+     * @return the authenticated {@link UserDetails1} object, or null if authentication fails
+     * @throws AnyException if the user is not found or authentication fails
+     */
     @Override
     public UserDetails1 authenticateUser(LoginMethod method, String username, String email, String phoneNumber,
-            String password) {
+                                         String password) {
         String loginIdentifier = switch (method) {
             case USERNAME -> username;
             case EMAIL -> loginWithEmail(email);
@@ -273,8 +353,13 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
         return findUser(method, username, email, phoneNumber);
     }
 
-
-
+    /**
+     * Retrieves the username associated with the provided email for login purposes.
+     *
+     * @param email the email address to look up
+     * @return the username associated with the email
+     * @throws AnyException if the email is invalid or the user is not found
+     */
     @Override
     public String loginWithEmail(String email) {
         UserDetails1 user = userRepo.findByUserEmail(email).stream().findFirst().orElse(null);
@@ -283,6 +368,13 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
         return user.getUsername();
     }
 
+    /**
+     * Retrieves the username associated with the provided phone number for login purposes.
+     *
+     * @param phoneNumber the phone number to look up
+     * @return the username associated with the phone number
+     * @throws AnyException if the phone number is invalid or the user is not found
+     */
     @Override
     public String loginWithPhone(String phoneNumber) {
         UserDetails1 user = userRepo.findByContactNumber(phoneNumber);
@@ -291,14 +383,21 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
         return user.getUsername();
     }
 
+    /**
+     * Finds a user based on the specified login method and credentials.
+     *
+     * @param loginMethod  the {@link LoginMethod} (USERNAME, EMAIL, or PHONE)
+     * @param username     the username (optional)
+     * @param email        the email (optional)
+     * @param phoneNumber  the phone number (optional)
+     * @return the {@link UserDetails1} object if found, or null otherwise
+     */
     @Override
     public UserDetails1 findUser(LoginMethod loginMethod, String username, String email, String phoneNumber) {
-
         return switch (loginMethod) {
             case USERNAME -> userRepo.findByUsername(username);
             case EMAIL -> userRepo.findByUserEmail(email).stream().findFirst().orElse(null);
             case PHONE -> userRepo.findByContactNumber(phoneNumber);
         };
     }
-
 }

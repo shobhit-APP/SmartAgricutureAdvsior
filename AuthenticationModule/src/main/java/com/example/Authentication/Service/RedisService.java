@@ -9,6 +9,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.Set;
 
+/**
+ * Service class for managing blocked user IDs in Redis.
+ * Provides methods to add, remove, check, and retrieve blocked user IDs using a Redis set.
+ */
 @Service
 public class RedisService {
 
@@ -19,10 +23,20 @@ public class RedisService {
     @Qualifier("redisTemplate")
     private RedisTemplate<String, Long> redisTemplate;
 
+    /**
+     * Constructs a RedisService instance with the specified RedisTemplate.
+     *
+     * @param redisTemplate The RedisTemplate for interacting with Redis, qualified to handle Long values.
+     */
     public RedisService(RedisTemplate<String, Long> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
+    /**
+     * Adds a user ID to the Redis set of blocked users.
+     *
+     * @param userId The ID of the user to add to the blocked users set.
+     */
     public void addToBlockedUsers(Long userId) {
         try {
             redisTemplate.opsForSet().add(BLOCKED_USERS_SET, userId);
@@ -32,6 +46,11 @@ public class RedisService {
         }
     }
 
+    /**
+     * Removes a user ID from the Redis set of blocked users.
+     *
+     * @param userId The ID of the user to remove from the blocked users set.
+     */
     public void removeFromBlockedUsers(Long userId) {
         try {
             redisTemplate.opsForSet().remove(BLOCKED_USERS_SET, userId);
@@ -41,6 +60,12 @@ public class RedisService {
         }
     }
 
+    /**
+     * Checks if a user ID is in the Redis set of blocked users.
+     *
+     * @param userId The ID of the user to check.
+     * @return {@code true} if the user is blocked in Redis, {@code false} otherwise or if Redis is unavailable.
+     */
     public boolean isUserBlocked(Long userId) {
         try {
             boolean result = Boolean.TRUE.equals(redisTemplate.opsForSet().isMember(BLOCKED_USERS_SET, userId));
@@ -52,6 +77,11 @@ public class RedisService {
         }
     }
 
+    /**
+     * Retrieves the total number of blocked user IDs in the Redis set.
+     *
+     * @return The count of blocked users, or 0 if the count cannot be retrieved due to an error.
+     */
     public long getBlockedUsersCount() {
         try {
             Long size = redisTemplate.opsForSet().size(BLOCKED_USERS_SET);
@@ -63,6 +93,11 @@ public class RedisService {
         }
     }
 
+    /**
+     * Retrieves all blocked user IDs from the Redis set.
+     *
+     * @return A {@link Set} of blocked user IDs, or an empty set if the retrieval fails.
+     */
     public Set<Long> getAllBlockedUsers() {
         try {
             Set<Long> members = redisTemplate.opsForSet().members(BLOCKED_USERS_SET);

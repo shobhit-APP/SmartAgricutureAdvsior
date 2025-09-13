@@ -1,4 +1,3 @@
-
 package com.example.agriconnect.Service;
 
 import com.example.common.Exception.AnyException;
@@ -19,6 +18,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Service class for managing crop price predictions and market data retrieval.
+ * Integrates with a Flask API to predict crop prices using multiple models (ensemble, neural network, XGBoost)
+ * and retrieves market data for users, with support for state-based filtering and unique state queries.
+ */
 @Service
 public class MarketServices {
     private static final Logger log = LoggerFactory.getLogger(MarketServices.class);
@@ -29,6 +33,17 @@ public class MarketServices {
     @Autowired
     private cropPriceRepo repository;
 
+    /**
+     * Predicts crop prices by sending crop data to a Flask API and selecting the best price from multiple models.
+     * Saves the predicted prices and the best price to the database.
+     *
+     * @param crop the {@link Crop} object containing details such as state, district, market, crop name,
+     *             arrival date, minimum price, and maximum price
+     * @return a {@link Map} containing the API response, predicted prices (ensemble, neural network, XGBoost),
+     *         and the best predicted price
+     * @throws AnyException if the Flask API is unavailable (HTTP 503), the request is invalid (HTTP 400),
+     *                      or an unexpected error occurs (HTTP 500)
+     */
     public Map<String, Object> getPrediction(Crop crop) {
         RestTemplate restTemplate = new RestTemplate();
         Map<String, Object> requestMap = new HashMap<>();
@@ -90,14 +105,33 @@ public class MarketServices {
         return response;
     }
 
+    /**
+     * Retrieves all market data entries associated with a specific user.
+     *
+     * @param userId the ID of the user whose market data is to be retrieved
+     * @return a {@link List} of {@link Crop} objects containing market data for the user
+     */
     public List<Crop> GetAllMarketDetailsById(Long userId) {
         return repository.findByUserDetails1UserId(userId);
     }
 
+    /**
+     * Retrieves market data entries for a specific user, filtered by state.
+     *
+     * @param state  the state to filter market data by
+     * @param userId the ID of the user whose market data is to be retrieved
+     * @return a {@link List} of {@link Crop} objects matching the state and user
+     */
     public List<Crop> findByStateAndUserId(String state, Long userId) {
         return repository.findByStateAndUserDetails1UserId(state, userId);
     }
 
+    /**
+     * Retrieves a set of unique states associated with a user's market data.
+     *
+     * @param userId the ID of the user whose unique states are to be retrieved
+     * @return a {@link Set} of distinct state names
+     */
     public Set<String> getUniqueState(Long userId) {
         return repository.findDistinctStatesByUserId(userId);
     }

@@ -8,6 +8,11 @@ import org.springframework.web.client.RestTemplate;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Service class for translating crop names to Hindi and retrieving crop information.
+ * Maintains a static dictionary of crop names with their Hindi translations and descriptions.
+ * Uses an external translation API (MyMemory) for crops not found in the dictionary.
+ */
 @Slf4j
 @Service
 public class TranslateToHindi {
@@ -62,6 +67,14 @@ public class TranslateToHindi {
         // ✅ Add more crops as needed...
     }
 
+    /**
+     * Retrieves crop information, including the Hindi name and descriptions, for the specified crop.
+     * If the crop is not found in the dictionary, it attempts to translate the crop name using an external API.
+     *
+     * @param cropName The name of the crop in English (e.g., "rice", "maize").
+     * @return A {@link CropInfo} object containing the Hindi name, Hindi description, and English description.
+     *         If the crop is not found, returns a {@link CropInfo} with a translated Hindi name and default descriptions.
+     */
     public CropInfo getCropInfo(String cropName) {
         cropName = cropName.toLowerCase();
 
@@ -75,6 +88,12 @@ public class TranslateToHindi {
                 "No description available for this crop.");
     }
 
+    /**
+     * Calls the MyMemory Translation API to translate the provided text from English to Hindi.
+     *
+     * @param text The text to translate (e.g., crop name in English).
+     * @return The translated Hindi text, or a default message ("अनुवाद उपलब्ध नहीं है") if translation fails.
+     */
     private String callTranslationAPI(String text) {
         String encodedText = text.replace(" ", "%20");
         String url = "https://api.mymemory.translated.net/get?q=" + encodedText + "&langpair=en|hi";

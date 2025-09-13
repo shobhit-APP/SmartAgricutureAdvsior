@@ -13,6 +13,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Utility class for handling weather-related operations, including fetching weather data and generating crop advice.
+ * Provides methods to normalize coordinates, create API responses, and handle fallback scenarios for weather data retrieval.
+ */
 @Component
 public class WeatherHelper {
 
@@ -27,7 +31,11 @@ public class WeatherHelper {
     private static final String DEFAULT_LOCATION = "Basti, Uttar Pradesh";
 
     /**
-     * Get normalized coordinates (use defaults if null)
+     * Normalizes the provided latitude and longitude coordinates, using default values if null.
+     *
+     * @param latitude  The latitude coordinate, or null to use the default (Basti, Uttar Pradesh).
+     * @param longitude The longitude coordinate, or null to use the default (Basti, Uttar Pradesh).
+     * @return An array containing the normalized latitude and longitude coordinates.
      */
     public double[] getNormalizedCoordinates(Double latitude, Double longitude) {
         double lat = latitude != null ? latitude : DEFAULT_LATITUDE;
@@ -36,7 +44,9 @@ public class WeatherHelper {
     }
 
     /**
-     * Get empty weather data template
+     * Creates an empty weather data template with default values.
+     *
+     * @return A {@link Map} containing default weather data fields (e.g., city, temperature, humidity).
      */
     public Map<String, Object> getEmptyWeatherData() {
         Map<String, Object> emptyData = new HashMap<>();
@@ -52,7 +62,13 @@ public class WeatherHelper {
     }
 
     /**
-     * Get weather data with proper error handling
+     * Fetches weather data for the specified coordinates and language, with fallback handling.
+     * Attempts to retrieve live weather data, falling back to default/cached data or an empty template if errors occur.
+     *
+     * @param latitude  The latitude coordinate, or null to use the default (Basti, Uttar Pradesh).
+     * @param longitude The longitude coordinate, or null to use the default (Basti, Uttar Pradesh).
+     * @param lang      The language code for localized weather data.
+     * @return A {@link WeatherResult} containing the weather data, location, success status, and optional error message.
      */
     public WeatherResult getWeatherData(Double latitude, Double longitude, String lang) {
         double[] coords = getNormalizedCoordinates(latitude, longitude);
@@ -85,7 +101,13 @@ public class WeatherHelper {
     }
 
     /**
-     * Create API response for weather data
+     * Creates an API response for weather data based on the provided coordinates and language.
+     *
+     * @param latitude  The latitude coordinate, or null to use the default (Basti, Uttar Pradesh).
+     * @param longitude The longitude coordinate, or null to use the default (Basti, Uttar Pradesh).
+     * @param lang      The language code for localized weather data.
+     * @return A {@link ResponseEntity} containing the weather data, location, and success status.
+     *         Returns HTTP 200 for success or fallback, and HTTP 500 for errors.
      */
     public ResponseEntity<Map<String, Object>> createWeatherApiResponse(Double latitude, Double longitude, String lang) {
         WeatherResult result = getWeatherData(latitude, longitude, lang);
@@ -103,6 +125,18 @@ public class WeatherHelper {
                 ResponseEntity.status(500).body(response) :
                 ResponseEntity.ok(response);
     }
+
+    /**
+     * Creates an API response with crop-specific advice based on weather data.
+     *
+     * @param latitude  The latitude coordinate, or null to use the default (Basti, Uttar Pradesh).
+     * @param longitude The longitude coordinate, or null to use the default (Basti, Uttar Pradesh).
+     * @param lang      The language code for localized advice.
+     * @param cropName  The name of the crop for which to generate advice.
+     * @return A {@link ResponseEntity} containing the crop advice, location, and success status.
+     *         Returns HTTP 200 for success or fallback, and HTTP 500 for errors.
+     * @throws AnyException If an error occurs while generating crop advice.
+     */
     public ResponseEntity<Map<String, Object>> createSingleCropApiResponse(
             Double latitude, Double longitude, String lang, String cropName) {
         WeatherResult result = getWeatherData(latitude, longitude, lang);
@@ -135,8 +169,9 @@ public class WeatherHelper {
                 ResponseEntity.status(500).body(response) :
                 ResponseEntity.ok(response);
     }
+
     /**
-     * Weather result wrapper class
+     * Inner class to encapsulate weather data results, including success status and error information.
      */
     public static class WeatherResult {
         // Getters
@@ -150,6 +185,15 @@ public class WeatherHelper {
         private final String errorMessage;
         private final boolean isError;
 
+        /**
+         * Constructs a WeatherResult instance.
+         *
+         * @param weatherData   The weather data map.
+         * @param location      The location string (e.g., "Basti, Uttar Pradesh").
+         * @param success       Indicates if the operation was successful.
+         * @param errorMessage  The error message, if any.
+         * @param isError       Indicates if the result represents an error state.
+         */
         private WeatherResult(Map<String, Object> weatherData, String location,
                               boolean success, String errorMessage, boolean isError) {
             this.weatherData = weatherData;
@@ -159,18 +203,46 @@ public class WeatherHelper {
             this.isError = isError;
         }
 
+        /**
+         * Creates a successful WeatherResult instance.
+         *
+         * @param weatherData The weather data map.
+         * @param location    The location string.
+         * @return A {@link WeatherResult} representing a successful operation.
+         */
         public static WeatherResult success(Map<String, Object> weatherData, String location) {
             return new WeatherResult(weatherData, location, true, null, false);
         }
 
+        /**
+         * Creates a fallback WeatherResult instance for when live data is unavailable.
+         *
+         * @param weatherData  The fallback weather data map.
+         * @param location     The location string.
+         * @param error        The error message explaining the fallback.
+         * @return A {@link WeatherResult} representing a fallback operation.
+         */
         public static WeatherResult fallback(Map<String, Object> weatherData, String location, String error) {
             return new WeatherResult(weatherData, location, false, error, false);
         }
 
+        /**
+         * Creates an error WeatherResult instance for when the service is unavailable.
+         *
+         * @param weatherData  The empty or default weather data map.
+         * @param location     The location string.
+         * @param error        The error message explaining the failure.
+         * @return A {@link WeatherResult} representing an error state.
+         */
         public static WeatherResult error(Map<String, Object> weatherData, String location, String error) {
             return new WeatherResult(weatherData, location, false, error, true);
         }
 
+        /**
+         * Checks if the result represents an error state.
+         *
+         * @return {@code true} if the result is an error, {@code false} otherwise.
+         */
         public boolean isError() { return isError; }
     }
 }
