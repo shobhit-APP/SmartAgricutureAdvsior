@@ -163,10 +163,10 @@ spring.application.name=AgriConnect
 server.port=8084
 
 # Database Configuration
-spring.datasource.url=jdbc:mysql://localhost:3306/shobhitdatabase
+spring.datasource.url=${url}
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
-spring.datasource.username=root
-spring.datasource.password=local123
+spring.datasource.username=${username}
+spring.datasource.password=${password}
 
 # JPA Settings
 spring.jpa.show-sql=true
@@ -185,11 +185,11 @@ Configure JWT settings, Redis connection, and email services in the Authenticati
 ### Environment Variables
 Set the following environment variables for production:
 ```bash
-DB_HOST=localhost
+DB_HOST=Your_Host
 DB_PORT=3306
 DB_NAME=shobhitdatabase
-DB_USERNAME=root
-DB_PASSWORD=local123
+DB_USERNAME=Your_Username
+DB_PASSWORD=Your_Password
 REDIS_HOST=localhost
 REDIS_PORT=6379
 CLOUDINARY_CLOUD_NAME=your_cloud_name
