@@ -1,351 +1,429 @@
-# 🌾 AgriConnect - Smart Agricultural Management Platform
+# AgriConnect Platform Backend
 
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.11-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://www.oracle.com/java/)
-[![MySQL](https://img.shields.io/badge/MySQL-8.0-blue.svg)](https://www.mysql.com/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![Java](https://img.shields.io/badge/Java-21-orange)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.11-green)
+![Maven](https://img.shields.io/badge/Maven-Multi--Module-blue)
+![MySQL](https://img.shields.io/badge/MySQL-Database-blue)
+![Redis](https://img.shields.io/badge/Redis-Cache-red)
 
 ## 📋 Table of Contents
 
 - [Overview](#overview)
-- [Features](#features)
-- [Technology Stack](#technology-stack)
+- [Architecture](#architecture)
+- [Modules](#modules)
 - [Prerequisites](#prerequisites)
-- [Installation & Setup](#installation--setup)
+- [Installation](#installation)
 - [Configuration](#configuration)
-- [API Endpoints](#api-endpoints)
-- [Usage](#usage)
-- [External Dependencies](#external-dependencies)
+- [Running the Application](#running-the-application)
+- [API Documentation](#api-documentation)
+- [Features](#features)
+- [Database Schema](#database-schema)
+- [Development](#development)
+- [Deployment](#deployment)
 - [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
+- [Support](#support)
 
-## 🌟 Overview
+## 🌾 Overview
 
-**AgriConnect** is a comprehensive smart agricultural management platform that empowers farmers with AI-driven insights, crop recommendations, price predictions, and disease detection capabilities. Built with modern web technologies, it provides an intuitive interface for agricultural decision-making.
+AgriConnect Platform is a comprehensive agricultural management system built with Spring Boot and Java 21. The platform provides farmers and agricultural stakeholders with tools for crop management, disease detection, weather monitoring, price tracking, and agricultural recommendations.
 
-### Key Highlights
+## 🏗️ Architecture
 
-- 🤖 **AI-Powered Recommendations**: Machine learning-based crop suggestions
-- 💰 **Price Prediction**: Market price forecasting with trend analysis
-- 🔍 **Disease Detection**: Image-based crop disease identification
-- 🌍 **Multi-Language Support**: Available in English and Hindi
-- 📱 **Responsive Design**: Works seamlessly across all devices
-- ☁️ **Weather Integration**: Real-time weather data and agricultural advice
+The project follows a multi-module Maven architecture with clear separation of concerns:
 
-## ✨ Features
+```
+Agriconnect_Platform/
+├── Agriconnect/           # Core agricultural services
+├── AuthenticationModule/  # Security and user management
+├── common/               # Shared utilities and models
+└── pom.xml              # Parent POM configuration
+```
 
-### 🔐 User Management
-- Secure user registration and authentication
-- Email verification with OTP
-- Profile management with account controls
-- Password reset functionality
-- Multi-status user accounts (Active, Inactive, Deleted, Blocked)
+### Technology Stack
 
-### 🌱 Crop Recommendation System
-- **Input Parameters**: Nitrogen (N), Phosphorus (P), Potassium (K), Temperature, Humidity, pH, Rainfall
-- **AI Analysis**: Machine learning algorithms for optimal crop selection
-- **Bilingual Results**: Recommendations in English and Hindi
-- **Historical Tracking**: View past recommendations and their outcomes
-
-### 💹 Price Prediction Engine
-- **Market Analysis**: Real-time crop price predictions
-- **Location-Based**: State, District, and Market-specific pricing
-- **Multiple Price Points**: Min, Max, and Suggested pricing
-- **Trend Visualization**: Historical price data and forecasting
-
-### 🦠 Disease Management
-- **Image Upload**: Upload crop images for disease detection
-- **AI Diagnosis**: Automated disease identification using computer vision
-- **Comprehensive Database**: Detailed disease information with causes, symptoms, and treatments
-- **Critical Alerts**: Monitoring and alerts for severe disease conditions
-- **Export Functionality**: Download disease data as CSV
-
-### 🖼️ Image Analysis
-- **Crop Analysis**: AI-powered crop image analysis
-- **Cloud Storage**: Secure image storage via Cloudinary
-- **Gemini Integration**: Advanced AI analysis capabilities
-
-### 🌤️ Weather Services
-- **Location-Based**: GPS-enabled weather data
-- **Agricultural Advice**: Weather-based farming recommendations
-- **Multi-Language**: Weather information in preferred language
-
-### 💬 Intelligent Chatbot
-- **24/7 Support**: AI-powered agricultural assistant
-- **FAQ Handling**: Common agricultural queries
-- **Multi-Language**: Support in English and Hindi
-
-## 🛠️ Technology Stack
-
-### Backend
-- **Framework**: Spring Boot 3.2.11
+- **Backend Framework**: Spring Boot 3.2.11
 - **Language**: Java 21
-- **Security**: Spring Security 6
-- **Database**: MySQL 8.0
-- **ORM**: Spring Data JPA with Hibernate
 - **Build Tool**: Maven
-- **Template Engine**: Thymeleaf
+- **Database**: MySQL
+- **Caching**: Redis
+- **Security**: Spring Security with JWT
+- **Documentation**: Swagger/OpenAPI
+- **Image Processing**: Cloudinary
+- **External APIs**: Weather API, Gemini AI, Pexels
 
-### Frontend
-- **CSS Framework**: Tailwind CSS
-- **JavaScript**: Vanilla JS with jQuery
-- **Animations**: Animate.css
-- **Icons**: Font Awesome 6
-- **Notifications**: SweetAlert2
-- **Charts**: Chart.js
+## 📦 Modules
 
-### External Services
-- **Cloud Storage**: Cloudinary
-- **AI Services**: Gemini API
-- **Image Services**: Pexels API
-- **Email**: Spring Mail with Gmail SMTP
-- **ML Services**: Custom Flask APIs
+### 1. Agriconnect (Core Module)
+**Port**: 8084
 
-### Development Tools
-- **Hot Reload**: Spring DevTools
-- **Code Generation**: Lombok
-- **Validation**: Jakarta Validation
-- **Logging**: SLF4J
-- **Web Scraping**: JSoup
+The main agricultural services module containing:
+
+- **Crop Management**: Crop information, disease detection, and recommendations
+- **Weather Services**: Real-time weather data and forecasts
+- **Market Services**: Crop pricing and market analysis
+- **Image Analysis**: AI-powered crop disease detection
+- **Export Services**: PDF report generation
+- **API Controllers**: RESTful endpoints for all services
+
+**Key Features:**
+- Crop disease identification and treatment recommendations
+- Weather-based agricultural advice
+- Market price tracking and analysis
+- Multilingual support (Hindi/English)
+- PDF report generation for agricultural data
+
+### 2. AuthenticationModule
+**Features**: Security and User Management
+
+Handles all authentication and authorization concerns:
+
+- **User Registration & Login**: Secure user onboarding
+- **JWT Token Management**: Stateless authentication
+- **OTP Services**: Email-based verification
+- **Password Management**: Secure password reset functionality
+- **Redis Integration**: Session and token caching
+- **Role-Based Access Control**: User permission management
+
+**Security Features:**
+- JWT-based authentication
+- OTP verification for critical operations
+- Secure password hashing
+- Session management with Redis
+- CORS configuration
+- Security middleware
+
+### 3. Common Module
+**Purpose**: Shared Resources and Utilities
+
+Contains shared components used across modules:
+
+- **Models**: Common data entities (User, Crop, Location, etc.)
+- **DTOs**: Data transfer objects
+- **Utilities**: Helper classes for various operations
+- **Configuration**: Application-wide configurations
+- **Exception Handling**: Global exception management
+- **Internationalization**: Multi-language support
 
 ## 📋 Prerequisites
 
-Before you begin, ensure you have the following installed:
+Before running the application, ensure you have:
 
-- ☕ **Java 21** or higher
-- 🗄️ **MySQL Server 8.0** or higher
-- 🔧 **Maven 3.6** or higher
-- 🌐 **Git** (for cloning the repository)
+- **Java 21** or higher
+- **Maven 3.6+**
+- **MySQL 8.0+**
+- **Redis Server**
+- **Git**
 
-## 🚀 Installation & Setup
+### External Service Accounts
+- **Cloudinary Account** (for image storage)
+- **Weather API Key** (for weather services)
+- **Gemini AI API Key** (for AI-powered features)
+- **Pexels API Key** (for image services)
+
+## 🚀 Installation
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/agriconnect.git
-cd agriconnect
+git clone <repository-url>
+cd Agriconnect_Platform
 ```
 
 ### 2. Database Setup
+Create a MySQL database:
 ```sql
--- Create database
 CREATE DATABASE shobhitdatabase;
-
--- Create user (optional)
-CREATE USER 'agriconnect_user'@'localhost' IDENTIFIED BY 'your_password';
-GRANT ALL PRIVILEGES ON shobhitdatabase.* TO 'agriconnect_user'@'localhost';
+CREATE USER 'root'@'localhost' IDENTIFIED BY 'local123';
+GRANT ALL PRIVILEGES ON shobhitdatabase.* TO 'root'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
-### 3. Environment Configuration
-Create a `.env` file in the root directory or set environment variables:
-
-```env
-# Database Configuration
-DB_HOST_IP=localhost
-DB_USERNAME=root
-DB_PASS=your_mysql_password
-
-# API Keys
-GEMINI_KEY=your_gemini_api_key
-PEXELS_KEY=your_pexels_api_key
-
-# Email Configuration
-MAIL_USERNAME=your_email@gmail.com
-MAIL_PASSWORD=your_app_password
-
-# SSL Configuration (optional)
-SSL_PASSWORD=your_ssl_password
-
-# External Services
-HOST_IP=localhost
-```
-
-### 4. Build and Run
+### 3. Redis Setup
+Install and start Redis server:
 ```bash
-# Using Maven Wrapper (Recommended)
-./mvnw clean install
-./mvnw spring-boot:run
+# Windows (using Chocolatey)
+choco install redis-64
 
-# Or using Maven directly
+# Start Redis
+redis-server
+```
+
+### 4. Build the Project
+```bash
 mvn clean install
-mvn spring-boot:run
-
-# For Windows
-mvnw.cmd clean install
-mvnw.cmd spring-boot:run
-```
-
-### 5. Access the Application
-Open your browser and navigate to:
-```
-http://localhost:8084
 ```
 
 ## ⚙️ Configuration
 
 ### Application Properties
-Key configuration options in `application.properties`:
 
+#### Agriconnect Module (`Agriconnect/src/main/resources/application.properties`)
 ```properties
-# Server Configuration
+# Application
+spring.application.name=AgriConnect
 server.port=8084
 
-# Database Settings
-spring.datasource.url=jdbc:mysql://${DB_HOST_IP:localhost}:3306/shobhitdatabase
-spring.datasource.username=${DB_USERNAME:root}
-spring.datasource.password=${DB_PASS:password}
+# Database Configuration
+spring.datasource.url=jdbc:mysql://localhost:3306/shobhitdatabase
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.datasource.username=root
+spring.datasource.password=local123
 
-# JPA/Hibernate Settings
-spring.jpa.hibernate.ddl-auto=update
+# JPA Settings
 spring.jpa.show-sql=true
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.defer-datasource-initialization=true
 
-# File Upload Configuration
-spring.servlet.multipart.max-file-size=10MB
-spring.servlet.multipart.max-request-size=10MB
-
-# External API URLs
-flask.api.url=http://${HOST_IP:localhost}:8080/recommend
-flask.api.url2=http://${HOST_IP:localhost}:8081/predict
-flask.api.url3=http://${HOST_IP:localhost}:8082
+# API Keys (Configure these with your actual keys)
+cloudinary.cloud.name=your_cloud_name
+cloudinary.api.key=your_api_key
+cloudinary.api.secret=your_api_secret
 ```
 
-### SSL Configuration (Optional)
-To enable HTTPS, uncomment and configure:
-```properties
-server.ssl.enabled=true
-server.ssl.key-store=classpath:keystore.p12
-server.ssl.key-store-type=PKCS12
-server.ssl.key-store-password=${SSL_PASSWORD}
-server.ssl.key-alias=myserver
+#### Authentication Module
+Configure JWT settings, Redis connection, and email services in the AuthenticationModule's application.properties.
+
+### Environment Variables
+Set the following environment variables for production:
+```bash
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=shobhitdatabase
+DB_USERNAME=root
+DB_PASSWORD=local123
+REDIS_HOST=localhost
+REDIS_PORT=6379
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 ```
 
-## 🌐 API Endpoints
+## 🏃‍♂️ Running the Application
 
-### Authentication
-- `GET /api/login` - Login page
-- `POST /api/login` - Authenticate user
-- `GET /api/register` - Registration page
-- `POST /api/register` - Register new user
-- `GET /api/logout-success` - Logout confirmation
+### Development Mode
+
+#### Option 1: Run All Modules
+```bash
+# From the root directory
+mvn spring-boot:run
+```
+
+#### Option 2: Run Individual Modules
+```bash
+# Run Agriconnect module
+cd Agriconnect
+mvn spring-boot:run
+
+# Run Authentication module (in separate terminal)
+cd AuthenticationModule
+mvn spring-boot:run
+```
+
+### Production Mode
+```bash
+# Build JAR files
+mvn clean package
+
+# Run the application
+java -jar Agriconnect/target/Agriconnect-0.0.1-SNAPSHOT.jar
+```
+
+### Using Docker (Optional)
+```dockerfile
+# Dockerfile example for the main module
+FROM openjdk:21-jdk-slim
+COPY target/Agriconnect-0.0.1-SNAPSHOT.jar app.jar
+EXPOSE 8084
+ENTRYPOINT ["java", "-jar", "/app.jar"]
+```
+
+## 📚 API Documentation
+
+### Base URLs
+- **Agriconnect API**: `http://localhost:8084`
+- **Authentication API**: `http://localhost:8081` (if running separately)
+
+### Key Endpoints
+
+#### Authentication Endpoints
+```
+POST /auth/register          # User registration
+POST /auth/login            # User login
+POST /auth/logout           # User logout
+POST /auth/refresh-token    # Refresh JWT token
+POST /auth/forgot-password  # Password reset request
+POST /auth/reset-password   # Password reset confirmation
+```
+
+#### Agricultural Endpoints
+```
+GET  /api/crops                    # Get all crops
+POST /api/crops                    # Add new crop
+GET  /api/crops/{id}              # Get crop by ID
+GET  /api/crop-diseases           # Get crop diseases
+POST /api/crop-diseases           # Report crop disease
+GET  /api/crop-recommendations    # Get crop recommendations
+GET  /api/weather                 # Get weather information
+GET  /api/market-prices          # Get market prices
+POST /api/image-analysis         # Analyze crop images
+GET  /api/export/pdf             # Export data to PDF
+```
+
+### Swagger Documentation
+Access interactive API documentation at:
+- `http://localhost:8084/swagger-ui.html`
+
+## 🌟 Features
+
+### Core Agricultural Features
+- **Crop Disease Detection**: AI-powered image analysis for disease identification
+- **Weather Integration**: Real-time weather data and agricultural forecasts
+- **Market Price Tracking**: Current market prices for various crops
+- **Crop Recommendations**: Personalized crop suggestions based on location and conditions
+- **Multilingual Support**: Interface and data available in Hindi and English
 
 ### User Management
-- `GET /api/profile` - User profile page
-- `POST /api/profile/update-info` - Update profile information
-- `POST /api/profile/change-password` - Change password
-- `POST /api/profile/activate` - Activate account
-- `POST /api/profile/deactivate` - Deactivate account
+- **Secure Authentication**: JWT-based authentication with refresh tokens
+- **User Profiles**: Comprehensive user profile management
+- **Role-Based Access**: Different access levels for farmers, experts, and administrators
+- **OTP Verification**: Secure email-based verification system
 
-### Crop Services
-- `GET /api/recommend` - Crop recommendation form
-- `POST /api/recommend` - Submit recommendation request
-- `GET /api/dashboard1` - Recommendation dashboard
-- `GET /api/predict` - Price prediction form
-- `POST /api/predict` - Submit price prediction
-- `GET /api/dashboard` - Price dashboard
+### Data Management
+- **Export Functionality**: Generate PDF reports of agricultural data
+- **Data Persistence**: Reliable MySQL database storage
+- **Caching**: Redis-based caching for improved performance
+- **File Upload**: Cloudinary integration for image storage
 
-### Disease Management
-- `GET /api/diseases/dashboard` - Disease tracking dashboard
-- `GET /api/diseases/export` - Export disease data
+### Development Features
+- **Comprehensive Logging**: Detailed application logging
+- **Error Handling**: Global exception handling
+- **Validation**: Input validation across all endpoints
+- **Testing**: Unit and integration tests
 
-### Image Analysis
-- `GET /api/ImageAnalysis` - Image analysis page
-- `POST /api/ImageAnalysis/analyze` - Analyze uploaded image
+## 🗄️ Database Schema
 
-### Utility Services
-- `GET /api/weather` - Weather data API
-- `GET /api/ChatBot` - Chatbot interface
-- `GET /api/get-api-key` - Get API key
+### Key Entities
+- **UserDetails1**: User information and authentication data
+- **Crop**: Crop types and information
+- **CropDisease**: Disease reports and diagnoses
+- **CropRecommendation**: Agricultural recommendations
+- **LocationMapping**: Geographic location data
+- **Otpdata**: OTP verification records
 
-## 📱 Usage
+### Relationships
+- Users can have multiple crop disease reports
+- Crop recommendations are linked to users and locations
+- Location mapping supports geographic-based services
 
-### Getting Started
-1. **Register**: Create a new account with email verification
-2. **Login**: Access your dashboard
-3. **Choose Service**: Select from available agricultural services
+## 🛠️ Development
 
-### Crop Recommendation
-1. Navigate to **Crop Recommendation**
-2. Enter soil parameters (N, P, K values)
-3. Provide environmental data (temperature, humidity, rainfall, pH)
-4. Get AI-powered crop suggestions with detailed descriptions
+### Project Structure
+```
+src/main/java/com/example/
+├── agriconnect/
+│   ├── Controller/         # REST controllers
+│   ├── Service/           # Business logic
+│   ├── Repository/        # Data access layer
+│   └── AgriconnectApplication.java
+├── Authentication/
+│   ├── Controller/        # Auth controllers
+│   ├── Service/          # Auth services
+│   ├── Configuration/    # Security config
+│   └── Model/           # Auth models
+└── common/
+    ├── Model/           # Shared entities
+    ├── DTO/            # Data transfer objects
+    ├── util/           # Utility classes
+    └── config/         # Common configurations
+```
 
-### Price Prediction
-1. Go to **Price Prediction**
-2. Select location (State, District, Market)
-3. Choose crop type and enter current market data
-4. Receive price forecasts and trend analysis
+### Coding Standards
+- Follow Java naming conventions
+- Use Spring Boot best practices
+- Implement proper error handling
+- Write comprehensive unit tests
+- Document all public APIs
 
-### Disease Detection
-1. Access **Disease Dashboard**
-2. Upload crop images
-3. Get automated disease identification
-4. View treatment recommendations and preventive measures
+### Adding New Features
+1. Create feature branch from main
+2. Implement feature in appropriate module
+3. Add unit tests
+4. Update documentation
+5. Submit pull request
 
-### Weather Services
-1. Enable location services or enter coordinates
-2. Get real-time weather data
-3. Receive agricultural advice based on weather conditions
+## 🚀 Deployment
 
-## 🔗 External Dependencies
+### Production Checklist
+- [ ] Configure production database
+- [ ] Set up Redis cluster
+- [ ] Configure external API keys
+- [ ] Set up monitoring and logging
+- [ ] Configure reverse proxy (Nginx)
+- [ ] Set up SSL certificates
+- [ ] Configure backup strategies
 
-### Machine Learning Services
-The application integrates with external Flask APIs:
+### Environment-Specific Configurations
+Use Spring profiles for different environments:
+```properties
+# application-prod.properties
+spring.profiles.active=prod
+spring.jpa.hibernate.ddl-auto=validate
+logging.level.com.example=WARN
+```
 
-- **Recommendation Service**: `http://localhost:8080/recommend`
-- **Prediction Service**: `http://localhost:8081/predict`
-- **Additional Service**: `http://localhost:8082`
-
-### Required API Keys
-- **Gemini API**: For AI-powered analysis
-- **Pexels API**: For image services
-- **Gmail SMTP**: For email services
+### Docker Deployment
+```bash
+# Build and run with Docker Compose
+docker-compose up -d
+```
 
 ## 🤝 Contributing
 
-We welcome contributions! Please follow these steps:
+### Development Process
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass
+6. Submit a pull request
 
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/AmazingFeature`)
-3. **Commit** your changes (`git commit -m 'Add some AmazingFeature'`)
-4. **Push** to the branch (`git push origin feature/AmazingFeature`)
-5. **Open** a Pull Request
+### Code Review Guidelines
+- Code must pass all tests
+- Follow established coding standards
+- Include appropriate documentation
+- Update README if necessary
 
-### Development Guidelines
-- Follow Java coding standards
-- Write comprehensive tests
-- Update documentation
-- Ensure responsive design
-- Support multi-language features
+## 📞 Support
+
+### Getting Help
+- **Documentation**: Check this README and inline code comments
+- **Issues**: Report bugs and feature requests via GitHub Issues
+- **Discussions**: Join community discussions for questions and ideas
+
+### Common Issues
+1. **Database Connection**: Ensure MySQL is running and credentials are correct
+2. **Redis Connection**: Verify Redis server is running
+3. **Port Conflicts**: Check if ports 8084 and 8081 are available
+4. **API Keys**: Ensure all external service API keys are configured
+
+### Performance Optimization
+- Monitor database query performance
+- Use Redis caching effectively
+- Optimize image processing workflows
+- Implement pagination for large datasets
+
+---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 📞 Contact
-
-**Project Maintainer**: Shobhit Srivastava  
-**Email**: shobhitsrivastava2004@gmail.com  
-**Project Link**: [https://github.com/yourusername/agriconnect](https://github.com/yourusername/agriconnect)
-
----
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 🙏 Acknowledgments
 
-- Spring Boot community for the excellent framework
-- Agricultural experts for domain knowledge
-- Open source contributors
-- AI/ML service providers
+- Spring Boot team for the excellent framework
+- OpenWeather for weather API services
+- Cloudinary for image management services
+- All contributors to the open-source libraries used
 
 ---
 
-## 🔄 Version History
-
-- **v1.0.0** - Initial release with core features
-- **v1.1.0** - Added disease detection
-- **v1.2.0** - Enhanced UI/UX with multi-language support
-- **v1.3.0** - Integrated weather services and chatbot
-
----
-
-**Happy Farming! 🌾**
+**Built with ❤️ for the agricultural community**
