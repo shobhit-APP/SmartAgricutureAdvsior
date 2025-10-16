@@ -1,4 +1,4 @@
-package com.smartagriculture.community.service.Interface.interface;
+package com.smartagriculture.community.service.Interface;
 
 public interface CommunityService {
     // Service interface skeleton
