@@ -6,9 +6,10 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="common" />
         <module name="Agriconnect" />
         <module name="AuthenticationModule" />
+        <module name="common" />
+        <module name="community" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -22,6 +23,7 @@
       <module name="AuthenticationModule" options="-parameters" />
       <module name="comman" options="-parameters" />
       <module name="common" options="-parameters" />
+      <module name="community" options="-parameters" />
     </option>
   </component>
 </project>

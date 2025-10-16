@@ -5,9 +5,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication(scanBasePackages = {
-        "com.example.agriconnect",
-        "com.example.common",
-        "com.example.Authentication",
+    "com.example.agriconnect",
+    "com.example.common",
+    "com.example.Authentication",
+    "com.smartagriculture.community"
 })
 @EnableJpaRepositories
 public class AgriconnectApplication {

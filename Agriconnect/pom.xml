@@ -50,6 +50,11 @@
             <artifactId>AuthenticationModule</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.example</groupId>
+            <artifactId>community</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- Add Twilio SDK -->
         <dependency>

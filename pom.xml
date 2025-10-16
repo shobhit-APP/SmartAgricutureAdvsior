@@ -12,6 +12,7 @@
     <module>Agriconnect</module>
     <module>AuthenticationModule</module>
     <module>common</module>
+    <module>community</module>
   </modules>
 
   <parent>
