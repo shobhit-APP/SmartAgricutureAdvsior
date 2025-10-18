@@ -35,8 +35,10 @@ The project follows a multi-module Maven architecture with clear separation of c
 Agriconnect_Platform/
 ├── Agriconnect/           # Core agricultural services
 ├── AuthenticationModule/  # Security and user management
-├── common/               # Shared utilities and models
-└── pom.xml              # Parent POM configuration
+├── common/ # Shared utilities and models
+|-community frm modulue         
+└── pom.xml
+            # Parent POM configuration
 ```
 
 ### Technology Stack
