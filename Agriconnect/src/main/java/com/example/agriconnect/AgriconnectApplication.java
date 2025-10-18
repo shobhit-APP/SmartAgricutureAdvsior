@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
     "com.example.agriconnect",
     "com.example.common",
     "com.example.Authentication",
-    "com.smartagriculture.community"
+    "com.smartagriculture.community",
 })
 @EnableJpaRepositories
 public class AgriconnectApplication {
