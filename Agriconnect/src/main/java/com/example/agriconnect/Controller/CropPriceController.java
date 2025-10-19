@@ -27,7 +27,6 @@ import java.util.*;
 
 @Slf4j
 @RestController
-@RequestMapping("/api")
 @Tag(name = "Crop Price API", description = "Endpoints for retrieving crop price data, predictions, and CSRF token")
 public class CropPriceController {
     @Autowired

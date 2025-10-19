@@ -61,13 +61,13 @@ public class JwtUtil {
      * @return A JWT string containing the specified claims and expiration time.
      */
     public String generateToken(String username, Long userId, String fullName,
-                                String status, String verificationStatus) {
+                                String status, String verificationStatus ,String UserRole) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("fullName", fullName);
         claims.put("status", status);
         claims.put("verificationStatus", verificationStatus);
-
+        claims.put("UserRole",UserRole);
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(username)

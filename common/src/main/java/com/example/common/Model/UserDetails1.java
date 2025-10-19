@@ -42,6 +42,10 @@ public class UserDetails1 {
     @Enumerated(EnumType.STRING)
     @Column(name = "verification_status", nullable = false)
     private VerificationStatus verificationStatus;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private UserRole role;  // NEW FIELD (Farmer / Expert)
+
     @OneToMany(mappedBy = "userDetails1", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     private List<Crop> cropList;
@@ -59,6 +63,14 @@ public class UserDetails1 {
         }
     }
 
+    public enum UserRole {
+        FARMER, EXPERT;
+
+        @JsonCreator
+        public static UserRole fromString(String value) {
+            return UserRole.valueOf(value.toUpperCase());
+        }
+    }
     public enum VerificationStatus {
         Verified, Pending, Rejected;
 
@@ -67,4 +79,5 @@ public class UserDetails1 {
             return VerificationStatus.valueOf(value.trim().toUpperCase());
         }
     }
+
 }

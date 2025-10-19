@@ -27,7 +27,6 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api")
 @Tag(name = "Crop Image Analysis API", description = "Endpoints for analyzing crop images, checking analysis status, and cleaning up old files")
 public class CropImageAnalysis {
 

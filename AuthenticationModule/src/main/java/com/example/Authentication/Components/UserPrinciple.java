@@ -22,7 +22,7 @@ public class UserPrinciple implements UserDetails {
     private String password;
     private UserDetails1.UserStatus status;
     private UserDetails1.VerificationStatus verificationStatus;
-
+    private  UserDetails1.UserRole userRole;
     // Constructor for database-driven authentication (using UserDetails1)
     public UserPrinciple(UserDetails1 user) {
         this.userId = user.getUserId();
@@ -31,17 +31,20 @@ public class UserPrinciple implements UserDetails {
         this.password = user.getUserPassword();
         this.status = user.getStatus();
         this.verificationStatus = user.getVerificationStatus();
+        this.userRole=user.getRole();
+
     }
 
     // Constructor for JWT-driven authentication (using claims from UserContext)
     public UserPrinciple(Long userId, String username, String fullName,
-                         UserDetails1.UserStatus status, UserDetails1.VerificationStatus verificationStatus) {
+                         UserDetails1.UserStatus status, UserDetails1.VerificationStatus verificationStatus ,UserDetails1.UserRole userRole) {
         this.userId = userId;
         this.username = username;
         this.fullName = fullName;
-        this.password = null; // Not needed for JWT
+        this.password = null;
         this.status = status;
         this.verificationStatus = verificationStatus;
+        this.userRole =userRole;
     }
 
     @Override

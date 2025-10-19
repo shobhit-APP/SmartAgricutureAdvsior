@@ -28,7 +28,6 @@ import java.util.Set;
 
 @Slf4j
 @RestController
-@RequestMapping("/api")
 @Tag(name = "Crop Recommendation API", description = "Endpoints for generating and retrieving crop recommendations")
 public class CropRecommendationController {
 

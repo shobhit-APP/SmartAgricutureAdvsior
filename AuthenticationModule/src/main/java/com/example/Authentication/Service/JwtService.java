@@ -43,13 +43,12 @@ public class JwtService implements JwTService {
      *             <li>An internal server error response if an unexpected error occurs.</li>
      *         </ul>
      * @throws IllegalArgumentException If the user's status or verification status is invalid.
-     * @throws Exception If an unexpected error occurs during token generation or user data processing.
      */
     @Override
     public ResponseEntity<?> generateAuthResponseForUser(UserDetails1 user) {
         try {
             // Validate user input
-            if (user == null || user.getUserId() == null || user.getUsername() == null) {
+            if (user == null || user.getUserId() == null || user.getUsername() == null|| user.getRole() == null) {
                 log.warn("Invalid user data provided for generating auth response: userId={}, username={}",
                         user != null ? user.getUserId() : null, user != null ? user.getUsername() : null);
                 return ResponseEntity.badRequest().body(Map.of("error", "Invalid user data"));
@@ -73,7 +72,8 @@ public class JwtService implements JwTService {
                     user.getUserId(),
                     user.getFullname(),
                     status,
-                    verificationStatus
+                    verificationStatus,
+                    user.getRole().name()
             );
 
             // Generate refresh token

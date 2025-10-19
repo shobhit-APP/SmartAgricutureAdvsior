@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/diseases")
+@RequestMapping("/diseases")
 @Tag(name = "Crop Disease API", description = "Endpoints for managing crop disease data")
 public class CropDiseaseRestController {
 

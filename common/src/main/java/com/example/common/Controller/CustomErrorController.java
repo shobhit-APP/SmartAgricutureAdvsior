@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
  * Controller to handle custom error responses for the application.
  */
 @RestController
-@RequestMapping("/api")
 public class CustomErrorController {
     private static final Logger logger = LoggerFactory.getLogger(CustomErrorController.class);
 

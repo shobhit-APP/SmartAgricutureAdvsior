@@ -60,4 +60,6 @@ public interface UserContextInterface {
      * @throws IOException if an I/O error occurs while writing to the response
      */
     void sendUnauthorizedResponse(HttpServletResponse response, String message) throws IOException;
+
+    String extractUserRole(HttpServletRequest request);
 }

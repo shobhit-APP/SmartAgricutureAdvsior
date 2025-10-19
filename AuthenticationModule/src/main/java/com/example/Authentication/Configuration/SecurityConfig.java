@@ -40,8 +40,8 @@ public class SecurityConfig {
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
-            "/api/register",
-            "/api/weather/**"
+            "/register",
+            "/weather/**"
     };
 
     @Autowired

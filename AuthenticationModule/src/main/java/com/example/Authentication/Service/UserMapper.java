@@ -17,7 +17,8 @@ public class UserMapper {
                 userDetails.getFullname(),
                 userDetails.getContactNumber(),
                 userDetails.getVerificationStatus() != null ? userDetails.getVerificationStatus().name() : null,
-                userDetails.getStatus() != null ? userDetails.getStatus().name() : null
+                userDetails.getStatus() != null ? userDetails.getStatus().name() : null,
+                userDetails.getRole()!=null?userDetails.getRole().name():null
         );
     }
 }

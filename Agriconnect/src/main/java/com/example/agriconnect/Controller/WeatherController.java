@@ -18,7 +18,6 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api")
 @Tag(name = "Weather API", description = "Endpoints for retrieving weather data and crop-specific weather advice")
 public class WeatherController {
 

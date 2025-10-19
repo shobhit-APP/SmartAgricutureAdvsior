@@ -1,4 +1,4 @@
-package com.smartagriculture.cropreport.controller;
+package com.smartagriculture.community.controller;
 
 import org.springframework.web.bind.annotation.RestController;
 

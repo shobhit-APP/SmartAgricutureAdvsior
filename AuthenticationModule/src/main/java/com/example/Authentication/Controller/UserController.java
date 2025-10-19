@@ -32,7 +32,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api")
 @Tag(name = "User Management API", description = "Endpoints for user registration, profile management, and account operations")
 public class UserController {
     private static final Logger log = LoggerFactory.getLogger(UserController.class);

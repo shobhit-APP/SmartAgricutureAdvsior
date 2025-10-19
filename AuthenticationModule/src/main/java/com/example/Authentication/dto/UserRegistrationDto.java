@@ -50,4 +50,6 @@ public class UserRegistrationDto {
     @Pattern(regexp = "^[6-9][0-9]{9}$", message = "Contact number must be a valid 10-digit Indian number")
     private String contactNumber;
 
+    @NotBlank(message = "User role is required")
+    private String role; // FARMER or EXPERT
 }

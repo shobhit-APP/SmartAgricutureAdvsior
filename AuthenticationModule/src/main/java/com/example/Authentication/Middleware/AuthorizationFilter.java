@@ -25,13 +25,12 @@ public class AuthorizationFilter extends OncePerRequestFilter {
 
     private static final String[] PUBLIC_PATHS = {
             "/v1/auth/login",
-            "/v1/auth/register",
             "/v1/home/**",
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
-            "/api/register",
-            "/api/weather/**"
+            "/register",
+            "/weather/**"
     };
 
     @Autowired
@@ -67,16 +66,19 @@ public class AuthorizationFilter extends OncePerRequestFilter {
         String fullName = userContext.extractFullname(request);
         String statusStr = userContext.extractStatus(request);
         String verificationStatusStr = userContext.extractVerificationStatus(request);
-
+        String Role = userContext.extractUserRole(request);
         // Convert string status to enums
         UserDetails1.UserStatus status;
         UserDetails1.VerificationStatus verificationStatus;
+        UserDetails1.UserRole UserRole;
         try {
             status = UserDetails1.UserStatus.valueOf(statusStr);
             verificationStatus = UserDetails1.VerificationStatus.valueOf(verificationStatusStr);
+            UserRole =UserDetails1.UserRole.valueOf(Role);
+
         } catch (IllegalArgumentException e) {
-            logger.warn("Invalid status or verificationStatus: {}, {}", statusStr, verificationStatusStr);
-            userContext.sendUnauthorizedResponse(response, "Authorization failed: Invalid user status or verification status");
+            logger.warn("Invalid status or verificationStatus And Role: {}, {} ,{}", statusStr, verificationStatusStr,Role);
+            userContext.sendUnauthorizedResponse(response, "Authorization failed: Invalid user status or verification status or Role");
             return;
         }
 
@@ -90,7 +92,7 @@ public class AuthorizationFilter extends OncePerRequestFilter {
         // Set authentication if not already set
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
-                UserPrinciple userPrinciple = new UserPrinciple(userId, username, fullName, status, verificationStatus);
+                UserPrinciple userPrinciple = new UserPrinciple(userId, username, fullName, status, verificationStatus,UserRole);
                 UsernamePasswordAuthenticationToken authToken =
                         new UsernamePasswordAuthenticationToken(userPrinciple, null, Collections.emptyList());
                 SecurityContextHolder.getContext().setAuthentication(authToken);
@@ -104,7 +106,7 @@ public class AuthorizationFilter extends OncePerRequestFilter {
         }
 
         // Set UserPrinciple in request scope
-        UserPrinciple userPrinciple = new UserPrinciple(userId, username, fullName, status, verificationStatus);
+        UserPrinciple userPrinciple = new UserPrinciple(userId, username, fullName, status, verificationStatus ,UserRole);
         request.setAttribute("user", userPrinciple);
         logger.debug("Set UserPrinciple in request scope: {}", userPrinciple);
 

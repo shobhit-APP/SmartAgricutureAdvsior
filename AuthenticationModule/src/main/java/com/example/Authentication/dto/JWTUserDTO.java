@@ -15,4 +15,5 @@ public class JWTUserDTO {
     private String fullname;
     private String status;
     private String verificationStatus;
+    private String UserRole;
 }

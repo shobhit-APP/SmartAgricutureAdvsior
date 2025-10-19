@@ -61,6 +61,7 @@ public class UserServiceImpl implements UserService {
      * @throws AnyException If the registration details are invalid, already exist, or an error occurs during processing.
      */
     @Override
+    @Transactional
     public void register(UserRegistrationDto registrationDto) {
         if (registrationDto == null) {
             throw new AnyException(HttpStatus.BAD_REQUEST.value(), "Registration details cannot be null");
@@ -83,6 +84,7 @@ public class UserServiceImpl implements UserService {
             userDetails.setFullname(registrationDto.getFullname());
             userDetails.setUserEmail(registrationDto.getUserEmail());
             userDetails.setContactNumber(registrationDto.getContactNumber());
+            userDetails.setRole(UserDetails1.UserRole.valueOf(registrationDto.getRole()));
             if (!PasswordUtil.isValidPassword(registrationDto.getUserPassword())) {
                 throw new AnyException(HttpStatus.BAD_REQUEST.value(), "Password must be 8+ chars, include uppercase, lowercase, digit, and special char");
             }
@@ -196,6 +198,7 @@ public class UserServiceImpl implements UserService {
      * @param userEmail     The new email address.
      * @param contactNumber The new contact number.
      */
+    @Transactional
     public void updateUser(UserDetails1 user, String username, String userEmail, String contactNumber) {
         user.setUsername(username);
         user.setUserEmail(userEmail);
@@ -210,6 +213,7 @@ public class UserServiceImpl implements UserService {
      * @param newPassword The new password to set.
      * @return {@code true} if the password was updated successfully, {@code false} otherwise.
      */
+    @Transactional
     private boolean updateUserPassword(UserDetails1 user, String newPassword) {
         if (user == null || validateNull.isNullOrEmpty(newPassword)) {
             return false;
@@ -244,6 +248,7 @@ public class UserServiceImpl implements UserService {
      * @return {@code true} if the password was reset successfully, {@code false} otherwise.
      */
     @Override
+    @Transactional
     public boolean resetPassword(String phoneNumber, String newPassword) {
         UserDetails1 user = userRepo.findByContactNumber(phoneNumber);
         if (user != null) {
@@ -260,6 +265,7 @@ public class UserServiceImpl implements UserService {
      * @return {@code true} if the account was deactivated successfully, {@code false} otherwise.
      */
     @Override
+    @Transactional
     public boolean deactivateAccount(Long userId, String confirmPassword) {
         UserDetails1 user = findByUserId(userId);
         if (user != null && passwordEncoder.matches(confirmPassword, user.getUserPassword())) {
@@ -277,6 +283,7 @@ public class UserServiceImpl implements UserService {
      * @param confirmPassword The password to verify the user.
      * @return {@code true} if the account was soft deleted successfully, {@code false} otherwise.
      */
+    @Transactional
     @Override
     public boolean softDeleteAccount(Long userId, String confirmPassword) {
         UserDetails1 user = findByUserId(userId);
@@ -296,6 +303,7 @@ public class UserServiceImpl implements UserService {
      * @return {@code true} if the account was reactivated successfully, {@code false} otherwise.
      */
     @Override
+    @Transactional
     public boolean reactivateAccount(String username, String password) {
         UserDetails1 user = findByUsername(username);
         if (user != null && user.getStatus() == UserDetails1.UserStatus.Inactive &&
@@ -398,6 +406,7 @@ public class UserServiceImpl implements UserService {
      * @return {@code true} if the OTP request was successful, {@code false} otherwise.
      */
     @Override
+    @Transactional
     public boolean forgotPasswordRequest(String email) {
         try {
             String otp = otpService.generateAndStoreOtp(email, OtpPurpose.FORGOT_PASSWORD);
@@ -417,6 +426,7 @@ public class UserServiceImpl implements UserService {
      * @return {@code true} if the password was reset successfully, {@code false} otherwise.
      */
     @Override
+    @Transactional
     public boolean resetPasswordWithOtp(String email, String otp, String newPassword) {
         try {
             boolean valid = otpService.verifyOtp(email, otp, OtpPurpose.FORGOT_PASSWORD);
@@ -446,6 +456,7 @@ public class UserServiceImpl implements UserService {
      * @throws AnyException If the user is not found.
      */
     @Override
+    @Transactional
     public UserDTO getUserProfile(Long userId) {
         UserDetails1 userDetails = userRepo.findByUserId(userId);
         if (userDetails == null) {

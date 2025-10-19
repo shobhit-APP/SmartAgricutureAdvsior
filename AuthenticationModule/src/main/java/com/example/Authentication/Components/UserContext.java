@@ -93,6 +93,10 @@ public class UserContext implements UserContextInterface {
     public Long extractUserId(HttpServletRequest request) {
         return extractJWTValue(request, "userId", Long.class);
     }
+    @Override
+    public String extractUserRole(HttpServletRequest request) {
+        return extractJWTValue(request, "UserRole", String.class);
+    }
 
     @Override
     public String extractStatus(HttpServletRequest request) {

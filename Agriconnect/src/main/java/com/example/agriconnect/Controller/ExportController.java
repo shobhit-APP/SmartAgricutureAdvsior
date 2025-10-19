@@ -17,9 +17,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-@Controller
-@RequestMapping("/api")
+@RestController
 @Tag(name = "Export API", description = "Endpoint for exporting crop disease data to PDF")
 public class ExportController {
 
