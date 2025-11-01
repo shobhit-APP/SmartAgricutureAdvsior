@@ -1,12 +1,12 @@
 package com.example.Authentication.Controller;
 
 import com.example.Authentication.Components.UserPrinciple;
-import com.example.Authentication.Interface.AuthHelper;
 import com.example.Authentication.Interface.AuthService;
 import com.example.Authentication.Interface.OtpService;
 import com.example.Authentication.Service.ReferenceTokenService;
 import com.example.Authentication.UTIL.JwtUtil;
 import com.example.Authentication.UTIL.validateNull;
+import com.example.Authentication.enums.OtpPurpose;
 import com.example.common.Exception.AnyException;
 import com.example.common.util.PasswordUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,6 +27,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -121,16 +123,18 @@ public class AuthController {
             @Parameter(description = "Email address to verify", required = true, example = "user@example.com")
             @RequestParam("email") String email,
             @Parameter(description = "Verification token", required = true, example = "abc123")
-            @RequestParam("token") String token) {
+            @RequestParam("token") String token,
+            @Parameter(description = "Verification otp", required = true, example = "90123" )
+            @RequestParam("otp") String otp) {
         // Validate email and token presence
-        if (email == null || token == null || email.trim().isEmpty() || token.trim().isEmpty()) {
+        if (email == null || token == null || otp== null|| email.trim().isEmpty() || token.trim().isEmpty() || otp.trim().isEmpty()) {
             logger.warn("Missing email or token in verify request");
             return ResponseEntity.badRequest().body(Map.of("error", "Email and token are required"));
         }
 
         try {
             // Verify user email using AuthService
-            return authService.verifyUser(email, token);
+            return authService.verifyUser(email, token,otp);
         } catch (AnyException e) {
             logger.error("Email verification failed: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
@@ -201,7 +205,7 @@ public class AuthController {
     @PostMapping("/forget-password")
     @Operation(
             summary = "Initiate password reset",
-            description = "Sends an OTP to the specified phone number to initiate the password reset process."
+            description = "Sends an OTP to the specified email to initiate the password reset process."
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -211,7 +215,7 @@ public class AuthController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Missing phone number or invalid request",
+                    description = "Missing email or invalid request",
                     content = @Content(schema = @Schema(implementation = Map.class))
             ),
             @ApiResponse(
@@ -221,19 +225,19 @@ public class AuthController {
             )
     })
     public ResponseEntity<?> forgetPassword(
-            @Parameter(description = "Phone number for password reset", required = true)
+            @Parameter(description = "email for password reset", required = true)
             @RequestBody Map<String, String> requestBody) {
-        String phoneNumber = requestBody.get("phoneNumber");
+        String email = requestBody.get("email");
 
         // Validate phone number presence
-        if (validateNull.isNullOrEmpty(phoneNumber)) {
-            logger.warn("Missing phone number in forget-password request");
-            return ResponseEntity.badRequest().body(Map.of("error", "phoneNumber is required"));
+        if (validateNull.isNullOrEmpty(email)) {
+            logger.warn("Missing email in forget-password request");
+            return ResponseEntity.badRequest().body(Map.of("error", "email id is required"));
         }
 
         try {
             // Initiate password reset by sending OTP
-            return authService.forgetPassword(phoneNumber);
+            return authService.forgetPassword(email);
         } catch (AnyException e) {
             logger.error("Forget password request failed: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -248,7 +252,7 @@ public class AuthController {
     @PostMapping("/verify-otp-for-reset")
     @Operation(
             summary = "Verify OTP for password reset",
-            description = "Verifies an OTP sent to a phone number for password reset."
+            description = "Verifies an OTP sent to a email for password reset."
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -258,12 +262,12 @@ public class AuthController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Missing phone number or OTP",
+                    description = "Missing email or OTP",
                     content = @Content(schema = @Schema(implementation = Map.class))
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Invalid OTP or phone number",
+                    description = "Invalid OTP or email",
                     content = @Content(schema = @Schema(implementation = Map.class))
             ),
             @ApiResponse(
@@ -273,28 +277,28 @@ public class AuthController {
             )
     })
     public ResponseEntity<?> verifyResetOtp(
-            @Parameter(description = "Phone number and OTP for password reset verification", required = true)
+            @Parameter(description = "email and OTP for password reset verification", required = true)
             @RequestBody Map<String, String> requestBody,
             HttpServletRequest request) {
-        String phoneNumber = requestBody.get("phoneNumber");
+        String email = requestBody.get("email");
         String otp = requestBody.get("otp");
         // Validate input parameters
-        if (validateNull.isNullOrEmpty(phoneNumber) || validateNull.isNullOrEmpty(otp)) {
-            logger.warn("Missing phoneNumber or OTP in verify-otp-for-reset request");
-            return ResponseEntity.badRequest().body(Map.of("error", "phoneNumber and OTP are required"));
+        if (validateNull.isNullOrEmpty(email) || validateNull.isNullOrEmpty(otp)) {
+            logger.warn("Missing email or OTP in verify-otp-for-reset request");
+            return ResponseEntity.badRequest().body(Map.of("error", "email and OTP are required"));
         }
 
         try {
             // Verify OTP for password reset
-            boolean isVerified = otpService.verifyOtp(phoneNumber, otp);
+            boolean isVerified = otpService.verifyOtp(email, otp);
             if (!isVerified) {
-                logger.warn("Invalid OTP or phoneNumber for reset: {}", phoneNumber);
+                logger.warn("Invalid OTP or email for reset: {}", email);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("error", "Invalid OTP or phone number"));
+                        .body(Map.of("error", "Invalid OTP or email"));
             }
             // Delete OTP after successful verification
-            otpService.deleteOtpByIdentifier(phoneNumber);
-            logger.info("Reset OTP verified successfully for phoneNumber: {}", phoneNumber);
+            otpService.deleteOtpByIdentifier(email);
+            logger.info("Reset OTP verified successfully for email: {}", email);
             return ResponseEntity.ok(Map.of("message", "OTP verified successfully for password reset"));
         } catch (Exception e) {
             logger.error("Reset OTP verification failed: {}", e.getMessage(), e);
@@ -306,7 +310,7 @@ public class AuthController {
     @PostMapping("/reset-password")
     @Operation(
             summary = "Reset password",
-            description = "Resets the user password using the phone number and new password after OTP verification."
+            description = "Resets the user password using the email and new password after OTP verification."
     )
     @ApiResponses(value = {
             @ApiResponse(
@@ -316,7 +320,7 @@ public class AuthController {
             ),
             @ApiResponse(
                     responseCode = "400",
-                    description = "Missing phone number, invalid password format, or invalid request",
+                    description = "Missing email, invalid password format, or invalid request",
                     content = @Content(schema = @Schema(implementation = Map.class))
             ),
             @ApiResponse(
@@ -326,24 +330,24 @@ public class AuthController {
             )
     })
     public ResponseEntity<?> resetPassword(
-            @Parameter(description = "Phone number and new password for reset", required = true)
+            @Parameter(description = "email and new password for reset", required = true)
             @RequestBody Map<String, String> requestBody,
             HttpServletRequest request) {
-        String phoneNumber = requestBody.get("phoneNumber");
+        String email = requestBody.get("email");
         String newPassword = requestBody.get("newPassword");
         // Validate input parameters
-        if (validateNull.isNullOrEmpty(phoneNumber) || validateNull.isNullOrEmpty(newPassword)) {
-            logger.warn("Missing phoneNumber or new password in reset-password request");
-            return ResponseEntity.badRequest().body(Map.of("error", "phoneNumber and new password are required"));
+        if (validateNull.isNullOrEmpty(email) || validateNull.isNullOrEmpty(newPassword)) {
+            logger.warn("Missing email or new password in reset-password request");
+            return ResponseEntity.badRequest().body(Map.of("error", "email and new password are required"));
         }
         // Validate password format
         if (!PasswordUtil.isValidPassword(newPassword)) {
-            logger.warn("Invalid password format for phone number: {}", phoneNumber);
+            logger.warn("Invalid password format for email: {}", email);
             return ResponseEntity.badRequest().body(Map.of("error", "Password must be 8+ chars, include uppercase, lowercase, digit, and special char"));
         }
         try {
             // Reset password using AuthService
-            return authService.resetPassword(phoneNumber, newPassword);
+            return authService.resetPassword(email, newPassword);
         } catch (AnyException e) {
             logger.error("Password reset failed: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -465,4 +469,63 @@ public class AuthController {
         logger.info("User logged out successfully: {}", username);
         return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
     }
+    @PreAuthorize("hasRole('EXPERT')")
+    @PostMapping("/expert_otp/resend")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> resendOtp(@RequestBody Map<String, String> request) {
+        Map<String, Object> response = new HashMap<>();
+        String email = request.get("email");
+
+        if (email == null || email.isEmpty()) {
+            response.put("success", false);
+            response.put("message", "Email is required");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+        try {
+            otpService.deleteOtpByIdentifier(email);
+            otpService.generateAndStoreOtp(email, OtpPurpose.EXPERT_VERIFICATION);
+            response.put("success", true);
+            response.put("message", "OTP resent successfully to " + email);
+            return ResponseEntity.ok(response);
+        } catch (AnyException e) {
+            response.put("success", false);
+            response.put("message", "Failed to resend OTP: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+    @PreAuthorize("hasRole('EXPERT')")
+    @PostMapping("/expert/verify-otp")
+    public ResponseEntity<Map<String, Object>> verifyOtp(
+            @RequestBody Map<String, String> request,@AuthenticationPrincipal UserPrinciple userPrinciple) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        String email = request.get("email");
+        String otp = request.get("otp");
+
+        if (email == null || otp == null || email.isEmpty() || otp.isEmpty()) {
+            response.put("success", false);
+            response.put("message", "Email and OTP are required");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+        try {
+            boolean isValidOtp = otpService.verifyExpertOtp(email, otp);
+            if (isValidOtp) {
+                otpService.deleteOtpByIdentifier(email);
+                otpService.markUserAsPendingReview(email,userPrinciple.getUserId(),userPrinciple.getFullName());
+                response.put("success", true);
+                response.put("message", "OTP verified successfully! Your credentials are under review.");
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("success", false);
+                response.put("message", "Invalid OTP");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+        } catch (AnyException e) {
+            response.put("success", false);
+            response.put("message", "Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
 }

@@ -64,7 +64,7 @@ public class UserDetails1 {
     }
 
     public enum UserRole {
-        FARMER, EXPERT;
+        FARMER, EXPERT,ADMIN;
 
         @JsonCreator
         public static UserRole fromString(String value) {

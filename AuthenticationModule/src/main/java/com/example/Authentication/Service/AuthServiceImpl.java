@@ -44,6 +44,9 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
     private UserRepo userRepo;
 
     @Autowired
+    private EmailServiceInterface emailService;
+
+    @Autowired
     private JwTService jwTService;
     @Autowired
     private UserService userService;
@@ -106,7 +109,7 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
             if ("Unverified".equalsIgnoreCase(user.getVerificationStatus().name())) {
                 logger.info("Unverified user: userId={}. Triggering verification", user.getUserId());
 
-                boolean isSent = userService.sendVerificationEmail(user.getUserId(), user.getUserEmail(), "login");
+                boolean isSent = userService.sendVerificationEmail(user.getUserId(), user.getUserEmail(),user.getContactNumber(), "login");
 
                 if (!isSent) {
                     logger.error("Failed to send verification email to unverified user: {}", user.getUserId());
@@ -159,27 +162,27 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
     /**
      * Initiates a password reset by sending an OTP to the provided phone number.
      *
-     * @param phoneNumber the phone number associated with the user account
+     * @param email the phone number associated with the user account
      * @return a {@link ResponseEntity} containing a success message and masked phone number
      * @throws AnyException if the phone number is invalid or OTP sending fails
      */
     @Override
-    public ResponseEntity<?> forgetPassword(String phoneNumber) {
-        if (validateNull.isNullOrEmpty(phoneNumber)) {
+    public ResponseEntity<?> forgetPassword(String email) {
+        if (validateNull.isNullOrEmpty(email)) {
             return ResponseEntity.badRequest().body(Map.of("error", "Phone number is required"));
         }
 
         try {
-            UserDetails1 user = userRepo.findByContactNumber(phoneNumber);
+            UserDetails1 user = userRepo.findByUserEmail(email);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
             }
 
             String otp = otpService.generateAndStoreOtp(user.getUserEmail(), OtpPurpose.FORGOT_PASSWORD);
-            otpService.sendOtp(phoneNumber, otp);
+            emailService.sendOtp(email, otp);
             return ResponseEntity.ok(Map.of(
-                    "message", "OTP sent to phone number",
-                    "phoneNumber", maskPhoneNumber(phoneNumber)));
+                    "message", "OTP sent to email",
+                    "phoneNumber",maskEmail(email)));
         } catch (Exception e) {
             logger.error("Password reset request failed: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -190,28 +193,28 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
     /**
      * Resets the user's password using the provided phone number and new password.
      *
-     * @param phoneNumber the phone number associated with the user account
+     * @param email the email associated with the user account
      * @param newPassword the new password to set
      * @return a {@link ResponseEntity} containing a success message or error details
      * @throws AnyException if the phone number or password is invalid, or the reset fails
      */
     @Override
-    public ResponseEntity<?> resetPassword(String phoneNumber, String newPassword) {
+    public ResponseEntity<?> resetPassword(String email, String newPassword) {
         try {
-            if (validateNull.isNullOrEmpty(phoneNumber) || validateNull.isNullOrEmpty(newPassword)) {
-                logger.warn("Phone number or new password is missing");
-                return ResponseEntity.badRequest().body(Map.of("error", "Phone number and new password are required"));
+            if (validateNull.isNullOrEmpty(email) || validateNull.isNullOrEmpty(newPassword)) {
+                logger.warn("email or new password is missing");
+                return ResponseEntity.badRequest().body(Map.of("error", "email and new password are required"));
             }
 
-            UserDetails1 user = userRepo.findByContactNumber(phoneNumber);
+            UserDetails1 user = userRepo.findByUserEmail(email);
             if (user == null) {
-                logger.warn("User not found for phone number: {}", phoneNumber);
+                logger.warn("User not found for email: {}", email);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
             }
 
-            boolean isUpdated = userService.resetPassword(phoneNumber, newPassword);
+            boolean isUpdated = userService.resetPassword(email, newPassword,user);
             if (!isUpdated) {
-                logger.error("Password reset failed for phone number: {}", phoneNumber);
+                logger.error("Password reset failed for email: {}", email);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body(Map.of("error", "Failed to update password"));
             }
@@ -220,10 +223,10 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
             return ResponseEntity.ok(Map.of("message", "Password updated successfully"));
 
         } catch (AnyException e) {
-            logger.warn("Password reset validation error for phoneNumber={}: {}", phoneNumber, e.getMessage());
+            logger.warn("Password reset validation error for email={}: {}", email, e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
-            logger.error("Unexpected error resetting password for phoneNumber={}: {}", phoneNumber, e.getMessage(), e);
+            logger.error("Unexpected error resetting password for email={}: {}", email, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Failed to reset password"));
         }
@@ -238,30 +241,50 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
      * @throws AnyException if the email, token, or verification process is invalid
      */
     @Override
-    public ResponseEntity<?> verifyUser(String email, String token) {
+    public ResponseEntity<?> verifyUser(String email, String token, String otp) {
         try {
-            UserDetails1 user = userRepo.findByUserEmail(email).stream().findFirst().orElse(null);
+            UserDetails1 user = userRepo.findByUserEmail(email);
             if (user == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "User not found"));
             }
+
             if ("Verified".equalsIgnoreCase(String.valueOf(user.getVerificationStatus()))) {
                 return ResponseEntity.ok(Map.of("message", "Account already verified"));
             }
 
-            PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token);
-            if (resetToken == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid token"));
+            boolean verified = false;
+
+            if (otp != null && !otp.isBlank()) {
+                boolean otpVerified = otpService.verifyOtp(email, otp, OtpPurpose.REGISTRATION);
+                if (otpVerified) {
+                    verified = true;
+                }
             }
 
-            if (!user.getUserId().equals(resetToken.getUserId())) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid token"));
+            if (token != null && !token.isBlank()) {
+                PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token);
+                if (resetToken == null) {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body(Map.of("error", "Invalid token"));
+                }
+                if (!user.getUserId().equals(resetToken.getUserId())) {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body(Map.of("error", "Token does not belong to this user"));
+                }
+                if (resetToken.getExpiryDate().isBefore(Instant.now())) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(Map.of("error", "Token expired"));
+                }
+                verified = true;
             }
 
-            if (resetToken.getExpiryDate().isBefore(Instant.now())) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Token expired"));
+            if (!verified) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Invalid or expired OTP/token"));
             }
+
             verifyUser(user);
-
             return ResponseEntity.ok(Map.of("message", "User verified successfully"));
         } catch (Exception e) {
             logger.error("User verification failed: {}", e.getMessage(), e);
@@ -362,7 +385,7 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
      */
     @Override
     public String loginWithEmail(String email) {
-        UserDetails1 user = userRepo.findByUserEmail(email).stream().findFirst().orElse(null);
+        UserDetails1 user = userRepo.findByUserEmail(email);
         if (user == null)
             throw new AnyException(HttpStatus.NOT_FOUND.value(), "Invalid email or user not found");
         return user.getUsername();
@@ -396,7 +419,7 @@ public class AuthServiceImpl implements AuthService, AuthHelper {
     public UserDetails1 findUser(LoginMethod loginMethod, String username, String email, String phoneNumber) {
         return switch (loginMethod) {
             case USERNAME -> userRepo.findByUsername(username);
-            case EMAIL -> userRepo.findByUserEmail(email).stream().findFirst().orElse(null);
+            case EMAIL -> userRepo.findByUserEmail(email);
             case PHONE -> userRepo.findByContactNumber(phoneNumber);
         };
     }

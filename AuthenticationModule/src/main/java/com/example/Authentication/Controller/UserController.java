@@ -1,11 +1,12 @@
 package com.example.Authentication.Controller;
 
 import com.example.Authentication.Components.UserPrinciple;
-import com.example.Authentication.Interface.AuthHelper;
-import com.example.Authentication.Interface.UserService;
+import com.example.Authentication.Interface.*;
 import com.example.Authentication.UTIL.validateNull;
+import com.example.Authentication.dto.ExpertDto;
 import com.example.Authentication.dto.UserDTO;
 import com.example.Authentication.dto.UserRegistrationDto;
+import com.example.Authentication.enums.OtpPurpose;
 import com.example.Authentication.repository.UserRepo;
 import com.example.common.Exception.AnyException;
 import com.example.common.Model.UserDetails1;
@@ -28,7 +29,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -47,6 +50,11 @@ public class UserController {
 
     @Autowired
     private validateNull validateNull;
+
+    @Autowired
+    private EmailServiceInterface emailService;
+    @Autowired
+    private ExpertService expertService;
 
     @PostMapping("/register")
     @Operation(
@@ -482,6 +490,50 @@ public class UserController {
             log.error("Account activation failed: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Error activating account: " + e.getMessage()));
+        }
+    }
+    @PreAuthorize("hasRole('EXPERT')")
+    @PostMapping("/verify-expert")
+    public ResponseEntity<Map<String, Object>> verifyExpert(
+            @RequestParam("field") String field,
+            @RequestParam("organization") String organization,
+            @RequestParam("experience_years") String experienceYears,
+            @RequestParam(value = "uploadId", required = false) MultipartFile uploadId,
+            @RequestParam(value = "profile_image", required = false) MultipartFile profile_image,
+            @AuthenticationPrincipal UserPrinciple userPrinciples) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        if (userPrinciples == null) {
+            response.put("success", false);
+            response.put("message", "User not authenticated");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
+        try {
+            if (!emailService.checkEmail(userPrinciples.getEmail())) {
+                response.put("success", false);
+                response.put("message", "Invalid email format");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+
+            ExpertDto expertDto = ExpertDto.builder()
+                    .field(field)
+                    .organization(organization)
+                    .experience_years(experienceYears)
+                    .isVerified(false)
+                    .build();
+
+             expertService.submitExpertVerification(expertDto, uploadId, userPrinciples,profile_image);
+
+            response.put("success", true);
+            response.put("message", "Verification request submitted successfully! OTP sent to " + userPrinciples.getEmail());
+            return ResponseEntity.ok(response);
+
+        } catch (AnyException e) {
+            response.put("success", false);
+            response.put("message", "Failed to submit verification: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
 }

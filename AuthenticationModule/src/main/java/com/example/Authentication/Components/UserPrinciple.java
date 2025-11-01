@@ -4,26 +4,29 @@ import com.example.common.Model.UserDetails1;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 @Component
 @AllArgsConstructor
 @NoArgsConstructor
+@Getter
 public class UserPrinciple implements UserDetails {
-    @Getter
     private  Long userId;
     private String username;
     private String fullName;
     private String password;
     private UserDetails1.UserStatus status;
     private UserDetails1.VerificationStatus verificationStatus;
+    private String email;
     private  UserDetails1.UserRole userRole;
-    // Constructor for database-driven authentication (using UserDetails1)
     public UserPrinciple(UserDetails1 user) {
         this.userId = user.getUserId();
         this.username = user.getUsername();
@@ -32,6 +35,7 @@ public class UserPrinciple implements UserDetails {
         this.status = user.getStatus();
         this.verificationStatus = user.getVerificationStatus();
         this.userRole=user.getRole();
+        this.email = user.getUserEmail();
 
     }
 
@@ -49,7 +53,7 @@ public class UserPrinciple implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.emptyList(); // Add roles if needed
+        return List.of(new SimpleGrantedAuthority("ROLE_" + userRole.name()));
     }
 
     @Override
@@ -90,4 +94,5 @@ public class UserPrinciple implements UserDetails {
     public boolean isEnabled() {
         return status == UserDetails1.UserStatus.Active;
     }
+
 }

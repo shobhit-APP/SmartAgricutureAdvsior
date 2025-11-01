@@ -1,5 +1,5 @@
 package com.smartagriculture.community.util;
 
 public class ContentSanitizerUtil {
-    // Utility skeleton - no implementation as requested
+    // TODO: implement sanitization to prevent XSS in user generated content
 }

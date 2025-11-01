@@ -1,8 +1,11 @@
 package com.example.Authentication.Service;
 
+import com.example.Authentication.Interface.EmailServiceInterface;
 import com.example.Authentication.Interface.OtpService;
+import com.example.Authentication.Model.Expert;
 import com.example.Authentication.Model.Otpdata;
 import com.example.Authentication.enums.OtpPurpose;
+import com.example.Authentication.repository.ExpertRepository;
 import com.example.Authentication.repository.OtpRepository;
 import com.example.common.Exception.AnyException;
 import com.twilio.Twilio;
@@ -11,6 +14,7 @@ import com.twilio.rest.api.v2010.account.Message;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Optional;
 import java.util.Random;
 
 /**
@@ -40,6 +45,12 @@ public class OtpServiceImpl implements OtpService {
     private String fromPhone;
 
     private final OtpRepository otpRepository;
+
+    @Autowired
+    private EmailServiceInterface emailServiceInterface;
+
+    @Autowired
+    private ExpertRepository expertRepository;
 
     /**
      * Constructs an {@code OtpServiceImpl} with the specified OTP repository.
@@ -68,7 +79,7 @@ public class OtpServiceImpl implements OtpService {
             logger.error("Invalid phone number for LOGIN OTP: {}", identifier);
             throw new AnyException(HttpStatus.BAD_REQUEST.value(), "Invalid phone number for login OTP");
         }
-        if ((purpose == OtpPurpose.REGISTRATION || purpose == OtpPurpose.FORGOT_PASSWORD) &&
+        if ((purpose == OtpPurpose.REGISTRATION || purpose == OtpPurpose.FORGOT_PASSWORD ||purpose==OtpPurpose.EXPERT_VERIFICATION) &&
                 (identifier == null || !identifier.contains("@"))) {
             logger.error("Invalid email for {} OTP: {}", purpose, identifier);
             throw new AnyException(HttpStatus.BAD_REQUEST.value(), "Invalid email for " + purpose + " OTP");
@@ -80,7 +91,7 @@ public class OtpServiceImpl implements OtpService {
             Otpdata otpData = new Otpdata();
             otpData.setOtp(otp);
             otpData.setPhoneNumber(purpose == OtpPurpose.LOGIN ? identifier : null); // Phone for LOGIN
-            otpData.setEmail(purpose == OtpPurpose.REGISTRATION || purpose == OtpPurpose.FORGOT_PASSWORD ? identifier : null); // Email for REGISTRATION, FORGOT_PASSWORD
+            otpData.setEmail(purpose == OtpPurpose.REGISTRATION || purpose == OtpPurpose.FORGOT_PASSWORD ||purpose==OtpPurpose.EXPERT_VERIFICATION? identifier : null); // Email for REGISTRATION, FORGOT_PASSWORD
             otpData.setPurpose(purpose.name());
             otpData.setExpiryTime(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")).plusMinutes(5));
             otpRepository.save(otpData);
@@ -104,13 +115,13 @@ public class OtpServiceImpl implements OtpService {
     @Override
     @Transactional
     public boolean verifyOtp(String identifier, String otpEntered, OtpPurpose purpose) {
-        if ((purpose == OtpPurpose.LOGIN || purpose == OtpPurpose.FORGOT_PASSWORD) &&
+        if ((purpose == OtpPurpose.LOGIN ) &&
                 (identifier == null || identifier.contains("@"))) {
             logger.error("Invalid phone number for {} OTP verification: {}", purpose, identifier);
             return false;
         }
 
-        if (purpose == OtpPurpose.REGISTRATION &&
+        if (purpose == OtpPurpose.REGISTRATION || purpose==OtpPurpose.EXPERT_VERIFICATION || purpose == OtpPurpose.FORGOT_PASSWORD&&
                 (identifier == null || !identifier.contains("@"))) {
             logger.error("Invalid email for {} OTP verification: {}", purpose, identifier);
             return false;
@@ -120,7 +131,7 @@ public class OtpServiceImpl implements OtpService {
             logger.info("Verifying OTP for identifier: {}, purpose: {}", identifier, purpose);
 
             // Fetch OTP based on purpose
-            Otpdata otpData = (purpose == OtpPurpose.LOGIN || purpose == OtpPurpose.FORGOT_PASSWORD)
+            Otpdata otpData = (purpose == OtpPurpose.LOGIN)
                     ? otpRepository.findByPhoneNumberAndPurpose(identifier, purpose.name()).orElse(null)
                     : otpRepository.findByEmailAndPurpose(identifier, purpose.name()).orElse(null);
 
@@ -162,15 +173,26 @@ public class OtpServiceImpl implements OtpService {
     /**
      * Verifies the OTP for forgot password purposes using the provided phone number.
      *
-     * @param phoneNumber The phone number associated with the OTP.
+     * @param email The email id associated with the OTP.
      * @param otpEntered  The OTP entered by the user.
      * @return {@code true} if the OTP is valid and not expired, {@code false} otherwise.
      */
     @Override
-    public boolean verifyOtp(String phoneNumber, String otpEntered) {
-        return verifyOtp(phoneNumber, otpEntered, OtpPurpose.FORGOT_PASSWORD);
+    public boolean verifyOtp(String email, String otpEntered) {
+        return verifyOtp(email, otpEntered, OtpPurpose.FORGOT_PASSWORD);
     }
+    /**
+     * Verifies the OTP for Expert_Verification purposes using the provided phone number.
+     *
+     * @param email The email id associated with the OTP.
+     * @param otpEntered  The OTP entered by the user.
+     * @return {@code true} if the OTP is valid and not expired, {@code false} otherwise.
+     */
 
+    @Override
+    public boolean verifyExpertOtp(String email, String otpEntered) {
+        return verifyOtp(email, otpEntered, OtpPurpose.EXPERT_VERIFICATION);
+    }
     /**
      * Deletes all OTPs associated with the given identifier (phone number or email).
      *
@@ -223,4 +245,23 @@ public class OtpServiceImpl implements OtpService {
             throw new AnyException(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Unexpected error sending OTP: " + e.getMessage());
         }
     }
+    @Override
+    @Transactional
+    public void markUserAsPendingReview(String email, Long userId, String fullName) {
+        try {
+            Optional<Expert> optionalExpert = expertRepository.findByUserId(userId);
+            if (optionalExpert.isEmpty()) {
+                throw new AnyException(404,"Expert details Not found");
+            }
+
+            Expert expert = optionalExpert.get();
+            expert.setVerified(false);
+            expertRepository.save(expert);
+            emailServiceInterface.sendPendingReviewAcknowledgement(email, fullName);
+
+        } catch (Exception e) {
+            throw new AnyException(500,"Error marking user as pending review: " + e.getMessage());
+        }
+    }
+
 }

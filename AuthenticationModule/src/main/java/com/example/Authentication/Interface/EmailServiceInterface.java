@@ -1,5 +1,8 @@
 package com.example.Authentication.Interface;
 
+import com.example.Authentication.Model.Expert;
+import com.example.common.Model.UserDetails1;
+
 /**
  * Interface defining all email-related operations for authentication
  * and user communication in the Smart Agriculture Advisor system.
@@ -56,4 +59,10 @@ public interface EmailServiceInterface {
      * @return true if sent successfully, false otherwise
      */
     boolean sendCustomEmail(String email, String subject, String content);
+
+    void sendApprovalEmail(UserDetails1 user, String Status, Expert expert);
+
+    void sendRejectionEmail(UserDetails1 user, String Status, String reason);
+
+    void sendPendingReviewAcknowledgement(String toEmail, String userName);
 }

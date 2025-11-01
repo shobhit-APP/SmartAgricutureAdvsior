@@ -93,7 +93,7 @@ public class UserServiceImpl implements UserService {
             userDetails.setStatus(UserDetails1.UserStatus.Inactive);
 
             UserDetails1 user = userRepo.save(userDetails);
-            boolean isSend = sendVerificationEmail(user.getUserId(), registrationDto.getUserEmail(), "registration");
+            boolean isSend = sendVerificationEmail(user.getUserId(), registrationDto.getUserEmail(),registrationDto.getContactNumber(), "registration");
             if (!isSend) {
                 throw new AnyException(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Failed to Send Email Try Again And Make Sure You Enter a Valid Email Address");
             }
@@ -150,7 +150,7 @@ public class UserServiceImpl implements UserService {
      * @param context The context of the verification (e.g., "registration").
      * @return {@code true} if the email was sent successfully, {@code false} otherwise.
      */
-    public boolean sendVerificationEmail(Long userId, String email, String context) {
+    public boolean sendVerificationEmail(Long userId, String email, String phone, String context) {
         try {
             String token = GenerateToken(userId, email);
             String link = String.format(
@@ -160,15 +160,25 @@ public class UserServiceImpl implements UserService {
                     URLEncoder.encode(token, StandardCharsets.UTF_8)
             );
 
-            // Send email
-            emailService.sendVerificationLink(email, link);
-            log.info("Verification email sent for {} with context: {}", email, context);
+            if ("login".equalsIgnoreCase(context)) {
+                emailService.sendVerificationLink(email, link);
+                log.info("Login verification link sent to {} (context: login)", email);
+            } else {
+                String otp = otpService.generateAndStoreOtp(email, OtpPurpose.REGISTRATION);
+                emailService.sendVerificationLink(email, link);
+                if (phone != null && !phone.isBlank()) {
+                   emailService.sendOtp(phone, otp);
+                }
+                log.info("Verification email + OTP sent to {} (context: {})", email, context);
+            }
             return true;
         } catch (Exception e) {
-            log.error("Failed to send verification email to {}: {}", email, e.getMessage(), e);
+            log.error("Failed to send verification email/OTP to {}: {}", email, e.getMessage(), e);
             return false;
         }
     }
+
+
 
     /**
      * Finds a user by their ID.
@@ -249,8 +259,7 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     @Transactional
-    public boolean resetPassword(String phoneNumber, String newPassword) {
-        UserDetails1 user = userRepo.findByContactNumber(phoneNumber);
+    public boolean resetPassword(String phoneNumber, String newPassword,UserDetails1 user) {
         if (user != null) {
             return updateUserPassword(user, newPassword);
         }
@@ -339,7 +348,7 @@ public class UserServiceImpl implements UserService {
     public UserDetails1 loginWithPassword(String loginKey, String password) {
         UserDetails1 user = (UserDetails1) userRepo.findByUsername(loginKey);
         if (user == null) {
-            user = userRepo.findByUserEmail(loginKey).stream().findFirst().orElse(null);
+            user = userRepo.findByUserEmail(loginKey);
         }
         if (user == null) {
             user = userRepo.findByContactNumber(loginKey);
@@ -432,7 +441,7 @@ public class UserServiceImpl implements UserService {
             boolean valid = otpService.verifyOtp(email, otp, OtpPurpose.FORGOT_PASSWORD);
             if (!valid) return false;
 
-            UserDetails1 user = userRepo.findByUserEmail(email).stream().findFirst().orElse(null);
+            UserDetails1 user = userRepo.findByUserEmail(email);
             if (user == null || user.getStatus() == UserDetails1.UserStatus.Deleted) {
                 return false;
             }
@@ -463,6 +472,11 @@ public class UserServiceImpl implements UserService {
             throw new AnyException(HttpStatus.NOT_FOUND.value(), "User not found");
         }
         return UserMapper.toUserResponseDTO(userDetails);
+    }
+
+    @Override
+    public UserDetails1 findById(Long userId) {
+        return userRepo.findByUserId(userId);
     }
 
     /**
