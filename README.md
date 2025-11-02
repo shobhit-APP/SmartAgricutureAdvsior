@@ -1,3 +1,115 @@
+# AgriConnect Platform
+
+AgriConnect is a multi-module Spring Boot platform for agricultural advisory features: crop pricing, recommendations, weather, image-based crop disease analysis, community features (blog, videos, soil reports, crop reports) and authentication.
+
+This repository (SmartAgricutureAdvsior) contains three main modules:
+
+- `Agriconnect` — the main Spring Boot application (artifact: `com.example:AgriConnect`). It depends on the other modules and contains the application's entry point (`AgriconnectApplication`).
+- `AuthenticationModule` — user authentication, JWT and Redis-backed sessions.
+- `common` — shared utilities, DTOs and helpers used by other modules.
+- `community` — new module added for community features (blogs, videos, soil reports, crop reports). It contains the `com.smartagriculture.community` package and a `cropreport` subpackage.
+
+Repository structure (important folders):
+
+```
+/ (repo root)
+├─ Agriconnect/                         # main application module
+├─ AuthenticationModule/                # authentication module
+├─ common/                              # shared module
+├─ community/                           # community module (controllers, models, dto, cropreport, resources)
+├─ docs/static/images/                  # project-level place to add images (architecture diagram)
+└─ README.md
+```
+
+Where to add the architecture image
+----------------------------------
+
+Place your architecture diagram (PNG/SVG) here so it appears in the README and is tracked by Git:
+
+- Project-level (recommended for README): `docs/static/images/architecture.png`
+- Module-level (optional): `community/src/main/resources/static/images/architecture.png`
+
+There is already a `.gitkeep` in each images folder so they stay tracked. To add your diagram:
+
+1. Save the image file as `architecture.png` (or `.svg`) into `docs/static/images/`.
+2. Commit and push the file. GitHub will render PNG/SVG inline in the README if you reference it.
+
+Example README image embedding (already included below):
+
+![Architecture](docs/static/images/architecture.png)
+
+If you want the module-level image served by Spring Boot statically at runtime, place it in `community/src/main/resources/static/images/`.
+
+How to build & run (local development)
+-------------------------------------
+
+Requirements:
+
+- Java 21 (project property)
+- Maven 3.6+
+- MySQL (or configure `spring.datasource.*` for your environment)
+
+Quick commands (Windows PowerShell):
+
+```powershell
+cd /d d:\Backup\Agriconnect_Platfrom
+mvn -DskipTests package
+cd Agriconnect
+mvn spring-boot:run
+```
+
+Notes about application properties and secrets
+---------------------------------------------
+
+- The `community` module has its own `application.properties` at `community/src/main/resources/application.properties` for module-specific settings (upload dirs, thresholds, Cloudinary config, etc.).
+- Do NOT commit secrets (database password, Cloudinary API keys). Prefer environment variables or `application-{profile}.properties` that are not checked into version control.
+
+Recommended pattern (example placeholders):
+
+```properties
+spring.datasource.password=${DB_PASSWORD}
+cloudinary.api.key=${CLOUDINARY_API_KEY}
+cloudinary.api.secret=${CLOUDINARY_API_SECRET}
+```
+
+Create a local `application.properties` or export env vars in your shell for development.
+
+Adding your architecture image and updating README
+-------------------------------------------------
+
+1. Put the image file at `docs/static/images/architecture.png`.
+2. Update this README or the `docs/` folder with additional diagrams if needed.
+3. Commit and push the image and README changes.
+
+Git help (example commands):
+
+```powershell
+cd /d d:\Backup\Agriconnect_Platfrom
+git add docs/static/images/architecture.png README.md
+git commit -m "docs: add architecture diagram and update README"
+git push origin main
+```
+
+Where to find the community module code
+--------------------------------------
+
+- Java sources: `community/src/main/java/com/smartagriculture/community`
+- Properties: `community/src/main/resources/application.properties`
+- Static assets (served by Spring Boot): `community/src/main/resources/static/`
+
+Other helpful notes
+-------------------
+- If you want me to generate the architecture diagram (PlantUML or image) and add it to `docs/static/images`, tell me which style you prefer (PlantUML PNG/SVG, or a stylized image for presentation) and I can create it and commit it for you.
+- If you want secrets replaced by environment variable placeholders in your `community` properties, I can edit the file and add `application.properties.example` with examples.
+
+Contact / Contributing
+----------------------
+If you want me to make further updates (generate the diagram, commit files, or run the build), tell me and I'll proceed with the requested step.
+
+---
+
+Project status: work-in-progress. New `community` module skeleton and `cropreport` package were added and `community` module has a sample `application.properties` under `community/src/main/resources`.
+
 # AgriConnect Platform Backend
 
 ![Java](https://img.shields.io/badge/Java-21-orange)
