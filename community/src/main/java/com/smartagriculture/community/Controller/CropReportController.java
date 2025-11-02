@@ -51,7 +51,6 @@ public class CropReportController {
         return ResponseEntity.ok(report);
     }
 
-    // ✅ Search reports by crop or region for logged-in user
     @GetMapping("/search")
     public ResponseEntity<List<CropReportDto>> searchReports(
             @RequestParam(required = false) String crop,
@@ -71,8 +70,6 @@ public class CropReportController {
 
         return ResponseEntity.ok(results);
     }
-
-    // ✅ Update report (with optional new image)
     @PutMapping("/{id}")
     public ResponseEntity<CropReportDto> updateReport(
             @PathVariable Long id,
