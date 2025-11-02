@@ -53,39 +53,50 @@ public class ExpertServiceImpl implements ExpertService {
                 "secure", true
         ));
     }
-    @Override
-    public List<ExpertDto> getPendingApplications() {
+    private List<ExpertDto> getPendingApplications() {
         List<Expert> pendingExperts = expertRepository.findByPendingReviewTrue();
         return pendingExperts.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public List<ExpertDto> getAllApplications() {
+    private List<ExpertDto> getAllApplications() {
         List<Expert> allExperts = expertRepository.findAll();
         return allExperts.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public List<ExpertDto> getVerifiedExperts() {
+    private List<ExpertDto> getVerifiedExperts() {
         List<Expert> verifiedExperts = expertRepository.findByIsVerifiedTrue();
         return verifiedExperts.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public List<ExpertDto> getRejectedExperts() {
+    private List<ExpertDto> getRejectedExperts() {
         List<Expert> rejectedExperts = expertRepository.findByIsVerifiedFalseAndPendingReviewFalse();
         return rejectedExperts.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
+
     @Override
-    public List<ExpertDto> getApprovedExperts() {
+    public List<ExpertDto> getExpertApplicationsByStatus(String status) {
+        try {
+            return switch (status.toLowerCase()) {
+                case "pending" -> getPendingApplications();
+                case "approved" -> getApprovedExperts();
+                case "rejected" -> getRejectedExperts();
+                case "verified" ->getVerifiedExperts();
+                default -> getAllApplications();
+            };
+        } catch (Exception e) {
+            throw new AnyException(500,"Failed to retrieve expert applications");
+        }
+    }
+
+    private List<ExpertDto> getApprovedExperts() {
         List<Expert> rejectedExperts = expertRepository.findByIsVerifiedTrueAndPendingReviewFalse();
         return rejectedExperts.stream()
                 .map(this::convertToDto)
@@ -178,6 +189,22 @@ public class ExpertServiceImpl implements ExpertService {
                 .isVerified(expert.isVerified())
                 .pendingReview(expert.isPendingReview())
                 .build();
+    }
+    @Override
+    public Map<String, Integer> getApplicationCounts() {
+        Map<String, Integer> counts = new HashMap<>();
+
+        int total     = (int) expertRepository.count();
+        int pending   = expertRepository.countByPendingReviewTrue();
+        int approved  = expertRepository.countByIsVerifiedTrue();
+        int rejected  = total - (pending + approved); // ya direct query
+
+        counts.put("total", total);
+        counts.put("pending", pending);
+        counts.put("approved", approved);
+        counts.put("rejected", rejected);
+
+        return counts;
     }
     @Override
     @Transactional

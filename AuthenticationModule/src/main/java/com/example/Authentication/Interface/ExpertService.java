@@ -8,15 +8,10 @@ import java.util.List;
 import java.util.Map;
 
 public interface ExpertService {
-    List<ExpertDto> getPendingApplications();
-    List<ExpertDto> getAllApplications();
-
-    List<ExpertDto> getApprovedExperts();
-
     ExpertDto getExpertById(Long expertId);
     Map<String, Object> handleExpertVerification(Long expertId, String action, String reason);
     ExpertDto getExpertByUserId(Long userId);
-    List<ExpertDto> getVerifiedExperts();
-    List<ExpertDto> getRejectedExperts();
+    List<ExpertDto> getExpertApplicationsByStatus(String status);
+    Map<String, Integer> getApplicationCounts();
     void submitExpertVerification(ExpertDto expertDto, MultipartFile uploadId, UserPrinciple userPrinciples, MultipartFile profile_image) throws AnyException;
 }

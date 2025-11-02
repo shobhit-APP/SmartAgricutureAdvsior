@@ -23,9 +23,9 @@ public class HandleExpertController {
 
     private final ExpertService expertService;
     @GetMapping("/review_expert")
-    public ResponseEntity<Map<String, Object>> getExpertApplications(
+    public ResponseEntity<Map<String, Object>> reviewExperts(
             @AuthenticationPrincipal UserPrinciple userPrinciples,
-            @RequestParam(required = false, defaultValue = "all") String status) {
+            @RequestParam String status) {
 
         Map<String, Object> response = new HashMap<>();
 
@@ -36,27 +36,22 @@ public class HandleExpertController {
         }
 
         try {
-            List<ExpertDto> applications = switch (status.toLowerCase()) {
-                case "pending" -> expertService.getPendingApplications();
-                case "approved" -> expertService.getApprovedExperts();
-                case "rejected" -> expertService.getRejectedExperts();
-                case "verified" -> expertService.getVerifiedExperts();
-                default -> expertService.getAllApplications();
-            };
+            Map<String, Integer> fullCounts = expertService.getApplicationCounts();
+            // Get filtered applications based on status
+            List<ExpertDto> applications = expertService.getExpertApplicationsByStatus(status);
 
             response.put("success", true);
             response.put("applications", applications);
-            response.put("count", applications.size());
+            response.put("count", fullCounts);
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
             response.put("success", false);
-            response.put("message", "Error fetching applications: " + e.getMessage());
+            response.put("message", "Error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
-    // ✅ 2. Get specific expert details by ID
     @GetMapping("/{expertId}")
     public ResponseEntity<Map<String, Object>> getExpertDetails(
             @AuthenticationPrincipal UserPrinciple userPrinciples,
