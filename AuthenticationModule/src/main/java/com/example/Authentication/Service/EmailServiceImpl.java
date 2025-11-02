@@ -262,7 +262,7 @@ public class EmailServiceImpl implements EmailServiceInterface {
                 "            <h1>Congratulations!</h1>" +
                 "        </div>" +
                 "        <div class='content'>" +
-                "            <p class='greeting'>Dear " + user + ",</p>" +
+                "            <p class='greeting'>Dear " + user.getUsername()+ ",</p>" +
                 "            <p class='message'>" +
                 "                We are thrilled to inform you that your expert verification application has been <strong>APPROVED</strong>! " +
                 "                You are now a certified expert on AgriConnect platform." +
