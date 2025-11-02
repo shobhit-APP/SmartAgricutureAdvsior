@@ -13,7 +13,6 @@ import com.example.Authentication.repository.ExpertRepository;
 import com.example.Authentication.repository.UserRepo;
 import com.example.common.Exception.AnyException;
 import com.example.common.Model.UserDetails1;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -54,7 +53,6 @@ public class ExpertServiceImpl implements ExpertService {
                 "secure", true
         ));
     }
-
     @Override
     public List<ExpertDto> getPendingApplications() {
         List<Expert> pendingExperts = expertRepository.findByPendingReviewTrue();
@@ -86,6 +84,14 @@ public class ExpertServiceImpl implements ExpertService {
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
+    @Override
+    public List<ExpertDto> getApprovedExperts() {
+        List<Expert> rejectedExperts = expertRepository.findByIsVerifiedTrueAndPendingReviewFalse();
+        return rejectedExperts.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
 
     @Override
     public ExpertDto getExpertById(Long expertId) {

@@ -10,6 +10,9 @@ import java.util.Map;
 public interface ExpertService {
     List<ExpertDto> getPendingApplications();
     List<ExpertDto> getAllApplications();
+
+    List<ExpertDto> getApprovedExperts();
+
     ExpertDto getExpertById(Long expertId);
     Map<String, Object> handleExpertVerification(Long expertId, String action, String reason);
     ExpertDto getExpertByUserId(Long userId);

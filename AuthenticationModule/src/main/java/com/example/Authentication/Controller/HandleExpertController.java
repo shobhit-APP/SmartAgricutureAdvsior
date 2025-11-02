@@ -5,7 +5,6 @@ import com.example.Authentication.Interface.ExpertService;
 import com.example.Authentication.dto.ExpertDto;
 import com.example.common.Model.UserDetails1;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,11 +18,10 @@ import java.util.Map;
 @PreAuthorize("hasRole('ADMIN')")
 @RestController
 @RequestMapping("/api/admin/experts")
-public class AdminController {
+@RequiredArgsConstructor
+public class HandleExpertController {
 
-    @Autowired
-    private  ExpertService expertService;
-
+    private final ExpertService expertService;
     @GetMapping("/review_expert")
     public ResponseEntity<Map<String, Object>> getExpertApplications(
             @AuthenticationPrincipal UserPrinciple userPrinciples,
@@ -38,10 +36,13 @@ public class AdminController {
         }
 
         try {
-            List<ExpertDto> applications =
-                    "pending".equalsIgnoreCase(status)
-                            ? expertService.getPendingApplications()
-                            : expertService.getAllApplications();
+            List<ExpertDto> applications = switch (status.toLowerCase()) {
+                case "pending" -> expertService.getPendingApplications();
+                case "approved" -> expertService.getApprovedExperts();
+                case "rejected" -> expertService.getRejectedExperts();
+                case "verified" -> expertService.getVerifiedExperts();
+                default -> expertService.getAllApplications();
+            };
 
             response.put("success", true);
             response.put("applications", applications);
@@ -55,6 +56,7 @@ public class AdminController {
         }
     }
 
+    // ✅ 2. Get specific expert details by ID
     @GetMapping("/{expertId}")
     public ResponseEntity<Map<String, Object>> getExpertDetails(
             @AuthenticationPrincipal UserPrinciple userPrinciples,
@@ -81,6 +83,7 @@ public class AdminController {
         }
     }
 
+    // ✅ 3. Approve / Reject / Under Review
     @PostMapping("/handle_expert")
     public ResponseEntity<Map<String, Object>> handleExpertVerification(
             @AuthenticationPrincipal UserPrinciple userPrinciples,

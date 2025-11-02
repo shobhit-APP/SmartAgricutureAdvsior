@@ -15,4 +15,5 @@ import java.util.Optional;
        List<Expert> findByIsVerifiedTrue();
        List<Expert> findByIsVerifiedFalseAndPendingReviewFalse();
        boolean existsByUserId(Long userId);
+       List<Expert> findByIsVerifiedTrueAndPendingReviewFalse();
    }
