@@ -7,7 +7,7 @@ This repository (SmartAgricutureAdvsior) contains the following modules:
 - `Agriconnect` — main Spring Boot application (entry point: `com.example.agriconnect.AgriconnectApplication`).
 - `AuthenticationModule` — authentication, JWT, and Redis-backed session support.
 - `common` — shared utilities and resources used across modules.
-- `community` — community features (blogs, videos, soil reports, crop reports) and the `cropreport` subpackage.
+- `community` — community features (blogs, videos, soil reports, crop reports,connect with expert) and the `cropreport` subpackage.
 
 Repository layout (top-level):
 
@@ -343,36 +343,6 @@ ENTRYPOINT ["java", "-jar", "/app.jar"]
 - **Agriconnect API**: `http://localhost:8084`
 - **Authentication API**: `http://localhost:8081` (if running separately)
 
-### Key Endpoints
-
-#### Authentication Endpoints
-```
-POST /auth/register          # User registration
-POST /auth/login            # User login
-POST /auth/logout           # User logout
-POST /auth/refresh-token    # Refresh JWT token
-POST /auth/forgot-password  # Password reset request
-POST /auth/reset-password   # Password reset confirmation
-```
-
-#### Agricultural Endpoints
-```
-GET  /api/crops                    # Get all crops
-POST /api/crops                    # Add new crop
-GET  /api/crops/{id}              # Get crop by ID
-GET  /api/crop-diseases           # Get crop diseases
-POST /api/crop-diseases           # Report crop disease
-GET  /api/crop-recommendations    # Get crop recommendations
-GET  /api/weather                 # Get weather information
-GET  /api/market-prices          # Get market prices
-POST /api/image-analysis         # Analyze crop images
-GET  /api/export/pdf             # Export data to PDF
-```
-
-### Swagger Documentation
-Access interactive API documentation at:
-- `http://localhost:8084/swagger-ui.html`
-
 ## 🌟 Features
 
 ### Core Agricultural Features
@@ -417,17 +387,105 @@ Access interactive API documentation at:
 
 ## 🛠️ Development
 
-### Project Structure
+### Project structure (detailed)
+
+Top-level Maven modules and key folders:
+
 ```
-src/main/java/com/example/
-├── agriconnect/
-│   ├── Controller/         # REST controllers
-│   ├── Service/           # Business logic
-│   ├── Repository/        # Data access layer
-│   └── AgriconnectApplication.java
-├── Authentication/
-│   ├── Controller/        # Auth controllers
-│   ├── Service/          # Auth services
+Agriconnect_Platform/
+├── Agriconnect/                # Main Spring Boot app (com.example.agriconnect)
+│   ├── pom.xml
+│   └── src/main/java/com/example/agriconnect/
+│       ├── AgriconnectApplication.java
+│       ├── Controller/         # REST controllers (CropPrice, Recommendation, Weather, Export, ApiKey, etc.)
+│       ├── Service/            # Business logic and facades
+│       └── Repository/         # JPA repositories
+├── AuthenticationModule/       # Authentication, JWT, Redis
+│   ├── pom.xml
+│   └── src/main/java/com/example/Authentication/
+├── common/                     # Shared utilities, DTOs, configs
+│   ├── pom.xml
+│   └── src/main/java/com/example/common/
+└── community/                  # Community features (blogs, videos, soil reports, cropreport)
+    ├── pom.xml
+    └── src/main/java/com/smartagriculture/community/
+        ├── controller/
+        │   ├── CommunityController.java
+        │   ├── BlogController.java
+        │   ├── VideoController.java
+        │   └── SoilReportController.java
+        ├── model/
+        │   ├── CommunityPost.java
+        │   ├── Comment.java
+        │   ├── BlogPost.java
+        │   ├── Expert.java
+        │   ├── VideoTutorial.java
+        │   ├── SoilReport.java
+        │   └── SoilParameter.java
+        ├── dto/
+        │   ├── CommunityPostDTO.java
+        │   ├── BlogPostDTO.java
+        │   ├── VideoTutorialDTO.java
+        │   ├── SoilReportDTO.java
+        │   └── CommentDTO.java
+        ├── mapper/
+        │   ├── CommunityMapper.java
+        │   ├── BlogMapper.java
+        │   ├── VideoMapper.java
+        │   └── SoilReportMapper.java
+        ├── repository/
+        │   ├── CommunityRepository.java
+        │   ├── CommentRepository.java
+        │   ├── BlogRepository.java
+        │   ├── ExpertRepository.java
+        │   ├── VideoRepository.java
+        │   └── SoilReportRepository.java
+        ├── service/
+        │   ├── interface/
+        │   │   ├── CommunityService.java
+        │   │   ├── BlogService.java
+        │   │   ├── VideoService.java
+        │   │   └── SoilReportService.java
+        │   └── implementation/
+        │       ├── CommunityServiceImpl.java
+        │       ├── BlogServiceImpl.java
+        │       ├── VideoServiceImpl.java
+        │       └── SoilReportServiceImpl.java
+        └── util/
+            ├── FileUploadUtil.java
+            ├── SoilParameterEvaluator.java
+            ├── ContentSanitizerUtil.java
+            └── DateFormatterUtil.java
+
+    # Cropreport (inside community)
+    community/src/main/java/com/smartagriculture/cropreport/
+    ├── controller/
+    │   └── CropReportController.java
+    ├── model/
+    │   ├── CropReport.java
+    │   └── CropHealthParameter.java
+    ├── dto/
+    │   └── CropReportDTO.java
+    ├── mapper/
+    │   └── CropReportMapper.java
+    ├── repository/
+    │   └── CropReportRepository.java
+    ├── service/
+    │   ├── interface/
+    │   │   └── CropReportService.java
+    │   └── implementation/
+    │       └── CropReportServiceImpl.java
+    └── util/
+        ├── CropHealthEvaluator.java
+        └── FileUploadUtil.java
+
+```
+
+Notes:
+- The `community` module now contains the full skeleton files for controllers, models, DTOs, mappers, repositories, services and utilities. These are intentionally empty/skeletal and ready for you to implement the business logic.
+- The canonical architecture image lives at `common/src/main/resources/static/image/architecture.png`.
+
+Use this tree as the authoritative project layout when adding or documenting files.
 │   ├── Configuration/    # Security config
 │   └── Model/           # Auth models
 └── common/
